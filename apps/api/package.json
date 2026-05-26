@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "vercel-build": "cd ../.. && pnpm --filter @kings/database db:generate",
+    "vercel-build": "cd ../.. && pnpm --filter @kings/shared build && pnpm --filter @kings/database db:generate",
     "start": "node dist/main",
     "dev": "nest start --watch",
     "type-check": "tsc -p tsconfig.build.json --noEmit"
