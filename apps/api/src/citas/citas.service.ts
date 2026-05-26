@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
 } from '@nestjs/common'
-import { Cron, CronExpression } from '@nestjs/schedule'
 import { PrismaService } from '../prisma/prisma.service'
 import { ClientesService } from '../clientes/clientes.service'
 import { EmailService } from '../email/email.service'
@@ -244,9 +243,8 @@ export class CitasService {
     return this.prisma.cita.update({ where: { id }, data: { estado } })
   }
 
-  // ── Cron: recordatorios 24h antes ─────────────────────────────────────────
+  // ── Recordatorios 24h antes (llamado desde endpoint HTTP en producción) ────
 
-  @Cron(CronExpression.EVERY_HOUR)
   async enviarRecordatorios() {
     const manana = new Date()
     manana.setDate(manana.getDate() + 1)
