@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "nest build",
+    "vercel-build": "cd ../.. && pnpm --filter @kings/database db:generate",
     "start": "node dist/main",
     "dev": "nest start --watch",
     "type-check": "tsc -p tsconfig.build.json --noEmit"
@@ -30,7 +31,8 @@
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.12.3",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "serverless-http": "^4.0.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.4.5",
