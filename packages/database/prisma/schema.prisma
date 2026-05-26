@@ -12,8 +12,7 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  // directUrl se usa cuando se configura el pooler de Supabase (puerto 6543)
-  // Por ahora usamos conexión directa (puerto 5432) para migraciones y queries
+  directUrl = env("DIRECT_URL")
 }
 
 // ─────────────────────────────────────────
