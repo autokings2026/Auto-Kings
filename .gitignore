@@ -46,3 +46,4 @@ Password.txt
 *.err
 *.log
 .claude/
+.env.vercel.*

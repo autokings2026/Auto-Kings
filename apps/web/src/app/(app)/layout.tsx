@@ -4,7 +4,7 @@ import { AppSidebar } from '@/components/layout/app-sidebar'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session) redirect('/login')
+  if (!session?.user?.rol) redirect('/login')
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
