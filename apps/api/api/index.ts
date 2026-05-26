@@ -40,8 +40,16 @@ async function bootstrap() {
 }
 
 export default async function handler(req: any, res: any) {
-  if (!cachedHandler) {
-    cachedHandler = await bootstrap()
+  try {
+    if (!cachedHandler) {
+      cachedHandler = await bootstrap()
+    }
+    return cachedHandler(req, res)
+  } catch (err) {
+    console.error('BOOTSTRAP ERROR:', err)
+    res.status(500).json({
+      error: 'Function initialization failed',
+      message: err instanceof Error ? err.message : String(err),
+    })
   }
-  return cachedHandler(req, res)
 }
