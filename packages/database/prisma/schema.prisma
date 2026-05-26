@@ -1,0 +1,504 @@
+// Kings Auto Diagnósticos — Prisma Schema
+// Base de datos: PostgreSQL
+// País: Honduras (HNL - Lempiras, +504)
+// Monorepo: packages/database
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl se usa cuando se configura el pooler de Supabase (puerto 6543)
+  // Por ahora usamos conexión directa (puerto 5432) para migraciones y queries
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum RolUsuario {
+  EMPLEADO
+  CONTROL_CALIDAD
+  ADMIN
+}
+
+enum EstadoCita {
+  PENDIENTE    // recién creada por el cliente
+  CONFIRMADA   // confirmada por el taller
+  CANCELADA    // cancelada por cualquiera
+  CONVERTIDA   // convertida en Orden de Trabajo
+  NO_ASISTIO   // el cliente no llegó
+}
+
+enum FaseOT {
+  LLEGADA_FOTOS    // Fase 1: recepción y fotos del vehículo
+  DIAGNOSTICO      // Fase 2: diagnóstico + cotización
+  REPARACION       // Fase 3: reparación activa
+  CONTROL_CALIDAD  // Fase 4: revisión de calidad
+  ENTREGA          // Fase 5: entrega al cliente
+  COMPLETADA       // Fase 6: proceso finalizado
+}
+
+enum EstadoOT {
+  ACTIVA                  // en proceso normal
+  EN_ESPERA_APROBACION    // cotización enviada, esperando respuesta del cliente
+  RECHAZADA_COTIZACION    // el cliente rechazó la cotización
+  COMPLETADA              // entregada con éxito
+  CANCELADA               // cancelada antes de completarse
+}
+
+enum TipoCombustible {
+  GASOLINA
+  DIESEL
+  HIBRIDO
+  ELECTRICO
+  GAS
+}
+
+enum TipoItemCotizacion {
+  MATERIAL    // repuesto, pieza, insumo
+  MANO_OBRA   // trabajo del técnico
+}
+
+enum TipoEventoOT {
+  // Creación
+  CREACION_OT
+  // Fotos
+  FOTO_SUBIDA
+  // Diagnóstico y cotización
+  DIAGNOSTICO_REGISTRADO
+  COTIZACION_GENERADA
+  COTIZACION_ENVIADA_WA
+  COTIZACION_APROBADA
+  COTIZACION_RECHAZADA
+  // Reparación
+  REPARACION_INICIADA
+  REPARACION_FINALIZADA
+  // Control de calidad
+  CC_APROBADO
+  CC_RECHAZADO        // regresa a REPARACION con observación
+  // Entrega
+  ENTREGA_NOTIFICADA  // empleado envió WA de "vehículo listo"
+  VEHICULO_ENTREGADO  // cliente recogió el vehículo
+  // Encuesta
+  ENCUESTA_ENVIADA
+  ENCUESTA_RESPONDIDA
+  // General
+  CAMBIO_FASE
+  NOTA_INTERNA
+  CITA_CONVERTIDA
+}
+
+enum TipoMensajeWA {
+  SALIENTE  // enviado desde la app (abre wa.me)
+  ENTRANTE  // recibido (registrado manualmente por el empleado)
+}
+
+enum TipoPlantillaWA {
+  CONFIRMAR_CITA
+  DIAGNOSTICO_LISTO
+  COTIZACION_LISTA
+  VEHICULO_LISTO
+  ENCUESTA_SATISFACCION
+  PERSONALIZADO
+}
+
+// ─────────────────────────────────────────
+// USUARIOS Y AUTENTICACIÓN
+// ─────────────────────────────────────────
+
+model User {
+  id        String     @id @default(cuid())
+  nombre    String
+  email     String     @unique
+  password  String     // bcrypt hash
+  rol       RolUsuario @default(EMPLEADO)
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relaciones
+  ordenesAsignadas OrdenTrabajo[]  @relation("TecnicoOrdenes")
+  fotosSubidas     FotoIngreso[]   @relation("FotoCreadaPor")
+  reparaciones     Reparacion[]    @relation("ReparacionTecnico")
+  controlesCalidad ControlCalidad[]
+  entregas         Entrega[]
+  mensajesEnviados MensajeWhatsApp[]
+  eventosGenerados EventoOT[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// CLIENTES
+// ─────────────────────────────────────────
+
+model Cliente {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String?
+  telefono  String   // formato local HN: 9999-9999 o +504 9999-9999
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  citas    Cita[]
+  ordenes  OrdenTrabajo[]
+  mensajes MensajeWhatsApp[]
+
+  @@map("clientes")
+}
+
+// ─────────────────────────────────────────
+// CATÁLOGO DE VEHÍCULOS (poblado por seeder externo)
+// ─────────────────────────────────────────
+
+model Marca {
+  id     String  @id @default(cuid())
+  nombre String  @unique
+  activa Boolean @default(true)
+
+  // Relaciones
+  modelos Modelo[]
+  citas   Cita[]
+  ordenes OrdenTrabajo[]
+
+  @@map("marcas")
+}
+
+model Modelo {
+  id      String  @id @default(cuid())
+  nombre  String
+  marcaId String
+  activo  Boolean @default(true)
+
+  // Relaciones
+  marca   Marca          @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  citas   Cita[]
+  ordenes OrdenTrabajo[]
+
+  @@unique([nombre, marcaId])
+  @@index([marcaId])
+  @@map("modelos")
+}
+
+// ─────────────────────────────────────────
+// CITAS (formulario público /reservar)
+// ─────────────────────────────────────────
+
+model Cita {
+  id           String     @id @default(cuid())
+  clienteId    String
+  marcaId      String
+  modeloId     String
+  anio         Int        // 2000–2026
+  placa        String
+  fecha        DateTime   @db.Date        // solo la fecha
+  hora         String     // "08:00", "09:00", ..., "17:00"
+  comentarios  String?    @db.Text
+  estado              EstadoCita @default(PENDIENTE)
+  emailEnviado        Boolean    @default(false) // confirmación de cita enviada
+  recordatorioEnviado Boolean    @default(false) // recordatorio 24h enviado
+  createdAt           DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Relaciones
+  cliente      Cliente       @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  marca        Marca         @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  modelo       Modelo        @relation(fields: [modeloId], references: [id], onDelete: Restrict)
+  ordenTrabajo OrdenTrabajo?
+
+  @@index([fecha, hora])
+  @@index([clienteId])
+  @@map("citas")
+}
+
+// ─────────────────────────────────────────
+// ÓRDENES DE TRABAJO
+// ─────────────────────────────────────────
+
+model OrdenTrabajo {
+  id           String          @id @default(cuid())
+  numero       String          @unique // "OT-2026-0001" — generado en el servicio
+  citaId       String?         @unique  // null si la OT se crea directamente
+  clienteId    String
+  tecnicoId    String
+  marcaId      String
+  modeloId     String
+  anio         Int
+  placa        String
+  color        String
+  combustible  TipoCombustible
+  kilometraje  Int
+  faseActual   FaseOT          @default(LLEGADA_FOTOS)
+  estado       EstadoOT        @default(ACTIVA)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relaciones
+  cita            Cita?                  @relation(fields: [citaId], references: [id], onDelete: SetNull)
+  cliente         Cliente                @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  tecnico         User                   @relation("TecnicoOrdenes", fields: [tecnicoId], references: [id], onDelete: Restrict)
+  marca           Marca                  @relation(fields: [marcaId], references: [id], onDelete: Restrict)
+  modelo          Modelo                 @relation(fields: [modeloId], references: [id], onDelete: Restrict)
+  fotos           FotoIngreso[]
+  diagnostico     DiagnosticoCotizacion?
+  reparacion      Reparacion?
+  controlesCC     ControlCalidad[]       // puede haber varios (si hay rechazos y reintento)
+  entrega         Entrega?
+  encuesta        EncuestaSatisfaccion?
+  mensajes        MensajeWhatsApp[]
+  eventos         EventoOT[]
+
+  @@index([clienteId])
+  @@index([tecnicoId])
+  @@index([faseActual, estado])
+  @@map("ordenes_trabajo")
+}
+
+// ─────────────────────────────────────────
+// FASE 1 — FOTOS DE INGRESO
+// ─────────────────────────────────────────
+
+model FotoIngreso {
+  id          String   @id @default(cuid())
+  ordenId     String
+  url         String   // URL pública de Cloudinary
+  publicId    String   // public_id de Cloudinary (para eliminar/transformar)
+  creadoPorId String
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  orden     OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  creadoPor User         @relation("FotoCreadaPor", fields: [creadoPorId], references: [id], onDelete: Restrict)
+
+  @@index([ordenId])
+  @@map("fotos_ingreso")
+}
+
+// ─────────────────────────────────────────
+// FASE 2 — DIAGNÓSTICO + COTIZACIÓN
+// ─────────────────────────────────────────
+
+model DiagnosticoCotizacion {
+  id                 String    @id @default(cuid())
+  ordenId            String    @unique
+  sintomaCliente     String    @db.Text  // lo que reportó el cliente
+  diagnosticoTecnico String    @db.Text  // diagnóstico del técnico
+  totalMateriales    Decimal   @db.Decimal(12, 2) @default(0)
+  totalManoObra      Decimal   @db.Decimal(12, 2) @default(0)
+  totalGeneral       Decimal   @db.Decimal(12, 2) @default(0)
+  tokenAprobacion    String    @unique @default(dbgenerated("gen_random_uuid()::text")) // token para link público cliente
+  aprobado           Boolean?  // null=pendiente, true=aprobado, false=rechazado
+  fechaAprobacion    DateTime?
+  mensajeAprobacion  String?   @db.Text // texto del mensaje de WA con la aprobación
+  pdfUrl             String?   // URL del PDF en Cloudinary (opcional, para referencia)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relaciones
+  orden OrdenTrabajo    @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  items ItemCotizacion[]
+
+  @@map("diagnostico_cotizaciones")
+}
+
+model ItemCotizacion {
+  id             String             @id @default(cuid())
+  cotizacionId   String
+  descripcion    String
+  tipo           TipoItemCotizacion
+  cantidad       Decimal            @db.Decimal(10, 2)
+  precioUnitario Decimal            @db.Decimal(12, 2)
+  subtotal       Decimal            @db.Decimal(12, 2) // cantidad * precioUnitario
+  posicion       Int                @default(0)        // orden de las filas en la tabla
+
+  // Relaciones
+  cotizacion DiagnosticoCotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+  @@index([cotizacionId])
+  @@map("items_cotizacion")
+}
+
+// ─────────────────────────────────────────
+// FASE 3 — REPARACIÓN
+// ─────────────────────────────────────────
+
+model Reparacion {
+  id           String    @id @default(cuid())
+  ordenId      String    @unique
+  tecnicoId    String
+  notas        String?   @db.Text
+  iniciadaEn   DateTime?
+  finalizadaEn DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relaciones
+  orden   OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  tecnico User         @relation("ReparacionTecnico", fields: [tecnicoId], references: [id], onDelete: Restrict)
+
+  @@map("reparaciones")
+}
+
+// ─────────────────────────────────────────
+// FASE 4 — CONTROL DE CALIDAD
+// (múltiples registros si hay rechazos y reintentos)
+// ─────────────────────────────────────────
+
+model ControlCalidad {
+  id            String   @id @default(cuid())
+  ordenId       String
+  aprobado      Boolean
+  observaciones String?  @db.Text // requerido si aprobado=false
+  revisadoPorId String
+  revisadoEn    DateTime @default(now())
+
+  // Relaciones
+  orden       OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  revisadoPor User         @relation(fields: [revisadoPorId], references: [id], onDelete: Restrict)
+
+  @@index([ordenId])
+  @@map("controles_calidad")
+}
+
+// ─────────────────────────────────────────
+// FASE 5 — ENTREGA
+// ─────────────────────────────────────────
+
+model Entrega {
+  id                    String    @id @default(cuid())
+  ordenId               String    @unique
+  notificadoEn          DateTime? // cuando se abrió wa.me de "vehículo listo"
+  entregadoEn           DateTime? // cuando se registró que el cliente recogió
+  registradoPorId       String
+  encuestaEmailEnviado  Boolean   @default(false) // se envió el link de encuesta por email
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relaciones
+  orden         OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  registradoPor User         @relation(fields: [registradoPorId], references: [id], onDelete: Restrict)
+
+  @@map("entregas")
+}
+
+// ─────────────────────────────────────────
+// FASE 6 — ENCUESTA DE SATISFACCIÓN (formulario público /encuesta/[token])
+// ─────────────────────────────────────────
+
+model EncuestaSatisfaccion {
+  id           String    @id @default(cuid())
+  ordenId      String    @unique
+  token        String    @unique @default(uuid()) // token en la URL pública
+  calidad      Int?      // 1–5 estrellas
+  tiempo       Int?      // 1–5 estrellas
+  atencion     Int?      // 1–5 estrellas
+  comentario   String?   @db.Text
+  respondidoEn DateTime?
+  createdAt    DateTime  @default(now())
+
+  // Relaciones
+  orden OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  @@map("encuestas_satisfaccion")
+}
+
+// ─────────────────────────────────────────
+// MENSAJES DE WHATSAPP (registro manual del inbox)
+// ─────────────────────────────────────────
+
+model MensajeWhatsApp {
+  id             String          @id @default(cuid())
+  ordenId        String?         // puede haber mensajes sin OT asociada
+  clienteId      String
+  texto          String          @db.Text
+  tipo           TipoMensajeWA   @default(SALIENTE)
+  plantillaUsada TipoPlantillaWA?
+  leido          Boolean         @default(false) // para alertas de "sin responder"
+  enviadoPorId   String
+  enviadoEn      DateTime        @default(now())
+
+  // Relaciones
+  orden     OrdenTrabajo? @relation(fields: [ordenId], references: [id], onDelete: SetNull)
+  cliente   Cliente       @relation(fields: [clienteId], references: [id], onDelete: Restrict)
+  enviadoPor User         @relation(fields: [enviadoPorId], references: [id], onDelete: Restrict)
+
+  @@index([clienteId, enviadoEn])
+  @@index([ordenId])
+  @@map("mensajes_whatsapp")
+}
+
+// ─────────────────────────────────────────
+// AUDITORÍA — LÍNEA DE TIEMPO DE LA OT
+// ─────────────────────────────────────────
+
+model EventoOT {
+  id             String       @id @default(cuid())
+  ordenId        String
+  tipo           TipoEventoOT
+  descripcion    String       @db.Text
+  metadata       Json?        // datos extra: observacion CC, url foto, monto, etc.
+  realizadoPorId String?      // null para eventos de sistema
+  createdAt      DateTime     @default(now())
+
+  // Relaciones
+  orden        OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  realizadoPor User?        @relation(fields: [realizadoPorId], references: [id], onDelete: SetNull)
+
+  @@index([ordenId, createdAt])
+  @@map("eventos_ot")
+}
+
+// ─────────────────────────────────────────
+// CONFIGURACIÓN DEL TALLER (singleton — solo una fila)
+// ─────────────────────────────────────────
+
+model ConfiguracionTaller {
+  id String @id @default(cuid())
+
+  // Datos del taller
+  nombre    String  @default("Kings Auto Diagnósticos")
+  telefono  String? // número principal del taller
+  direccion String?
+  email     String?
+  logoUrl   String? // URL de Cloudinary
+
+  // Horarios de atención
+  // JSON array: [{ dia: 0-6 (0=domingo), activo: bool, apertura: "HH:MM", cierre: "HH:MM" }]
+  // día 0=Domingo, 1=Lunes, ..., 6=Sábado
+  horariosAtencion Json @default("[{\"dia\":0,\"activo\":false,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":1,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":2,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":3,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":4,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":5,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"},{\"dia\":6,\"activo\":true,\"apertura\":\"08:00\",\"cierre\":\"18:00\"}]")
+
+  // Configuración de citas
+  duracionSlotMinutos Int @default(60) // duración de cada slot de cita
+  maxCitasPorSlot     Int @default(3)  // máximo de citas simultáneas por slot
+
+  // Alertas de WhatsApp sin responder
+  alertaAmarillaMinutos Int @default(60)  // aviso amarillo a los N minutos
+  alertaRojaMinutos     Int @default(120) // aviso rojo a los N minutos
+
+  updatedAt DateTime @updatedAt
+
+  @@map("configuracion_taller")
+}
+
+// ─────────────────────────────────────────
+// PLANTILLAS DE MENSAJES DE WHATSAPP (editables desde /config)
+// ─────────────────────────────────────────
+
+model PlantillaMensaje {
+  id        String          @id @default(cuid())
+  nombre    String
+  tipo      TipoPlantillaWA @unique // una plantilla activa por tipo
+  contenido String          @db.Text
+  // Variables disponibles: {{nombre_cliente}}, {{placa}}, {{marca}}, {{modelo}},
+  // {{fecha_cita}}, {{hora_cita}}, {{total_cotizacion}}, {{link_encuesta}}
+  activa    Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("plantillas_mensajes")
+}
