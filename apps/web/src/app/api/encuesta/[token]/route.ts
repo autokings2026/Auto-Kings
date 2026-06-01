@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 const SubmitSchema = z.object({
   calidad:    z.number().int().min(1).max(5),
   tiempo:     z.number().int().min(1).max(5),

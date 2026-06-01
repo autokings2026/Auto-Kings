@@ -5,7 +5,26 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "generated/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "generated/**"],
+      "env": [
+        "DATABASE_URL",
+        "DIRECT_URL",
+        "NEXTAUTH_URL",
+        "NEXTAUTH_SECRET",
+        "CLOUDINARY_CLOUD_NAME",
+        "CLOUDINARY_API_KEY",
+        "CLOUDINARY_API_SECRET",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME",
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET",
+        "RESEND_API_KEY",
+        "RESEND_FROM_EMAIL",
+        "JWT_SECRET",
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_APP_NAME",
+        "NEXT_PUBLIC_WHATSAPP_NUMBER",
+        "NEXT_PUBLIC_CURRENCY_CODE",
+        "NEXT_PUBLIC_CURRENCY_SYMBOL"
+      ]
     },
     "dev": {
       "cache": false,
