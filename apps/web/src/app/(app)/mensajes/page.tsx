@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 type TipoPlantilla =
   | 'CONFIRMAR_CITA'
@@ -136,13 +135,13 @@ export default function MensajesPage() {
   const textareaRefs = useRef<Record<string, HTMLTextAreaElement | null>>({})
 
   const headers = useCallback(
-    () => ({ Authorization: `Bearer ${session?.user?.accessToken ?? ''}`, 'Content-Type': 'application/json' }),
-    [session?.user?.accessToken],
+    () => ({ 'Content-Type': 'application/json' }),
+    [],
   )
 
   useEffect(() => {
     if (!session?.user) return
-    fetch(`${API}/inbox/plantillas`, { headers: headers() })
+    fetch(`/api/inbox/plantillas`, { headers: headers() })
       .then(r => r.ok ? r.json() : [])
       .then((data: Plantilla[]) => {
         const map: Record<string, Plantilla> = {}
@@ -186,7 +185,7 @@ export default function MensajesPage() {
     if (!session?.user) return
     setSaving(step.tipo)
     try {
-      const res = await fetch(`${API}/inbox/plantillas/${step.tipo}`, {
+      const res = await fetch(`/api/inbox/plantillas/${step.tipo}`, {
         method: 'PATCH',
         headers: headers(),
         body: JSON.stringify({
@@ -211,7 +210,7 @@ export default function MensajesPage() {
   const handleToggle = async (step: typeof STEPS[number], value: boolean) => {
     setActiva(prev => ({ ...prev, [step.tipo]: value }))
     if (!session?.user) return
-    await fetch(`${API}/inbox/plantillas/${step.tipo}`, {
+    await fetch(`/api/inbox/plantillas/${step.tipo}`, {
       method: 'PATCH',
       headers: headers(),
       body: JSON.stringify({

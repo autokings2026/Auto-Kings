@@ -9,7 +9,6 @@ import { FotoUpload } from './foto-upload'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 export function FaseFotos({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
   const { data: session } = useSession()
@@ -19,9 +18,9 @@ export function FaseFotos({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: 
   const avanzar = async () => {
     setAdvancing(true)
     try {
-      await fetch(`${API}/ordenes/${orden.id}/avanzar`, {
+      await fetch(`/api/ordenes/${orden.id}/avanzar`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+
       })
       onUpdate()
     } finally {

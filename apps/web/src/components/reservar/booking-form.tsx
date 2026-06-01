@@ -18,7 +18,6 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
@@ -171,7 +170,7 @@ export function BookingForm() {
 
   // Load marcas on mount
   useEffect(() => {
-    fetch(`${API}/marcas`)
+    fetch(`/api/marcas`)
       .then((r) => r.json())
       .then((data: Marca[]) => setMarcas(data))
       .catch(() => {})
@@ -183,7 +182,7 @@ export function BookingForm() {
     if (!marcaId) { setModelos([]); return }
     setLoadingModelos(true)
     setValue('modeloId', '')
-    fetch(`${API}/marcas/${marcaId}/modelos`)
+    fetch(`/api/marcas/${marcaId}/modelos`)
       .then((r) => r.json())
       .then((data: Modelo[]) => setModelos(data))
       .catch(() => setModelos([]))
@@ -195,7 +194,7 @@ export function BookingForm() {
     if (!fecha || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) { setSlots([]); return }
     setLoadingSlots(true)
     setValue('hora', '')
-    fetch(`${API}/citas/slots?fecha=${fecha}`)
+    fetch(`/api/citas/slots?fecha=${fecha}`)
       .then((r) => r.json())
       .then((data: Slot[]) => setSlots(data))
       .catch(() => setSlots([]))
@@ -209,7 +208,7 @@ export function BookingForm() {
       email: data.email || undefined,
     }
     try {
-      const res = await fetch(`${API}/citas`, {
+      const res = await fetch(`/api/citas`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

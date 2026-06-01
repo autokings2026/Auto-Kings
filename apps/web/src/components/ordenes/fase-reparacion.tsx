@@ -9,7 +9,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 export function FaseReparacion({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
   const { data: session } = useSession()
@@ -24,11 +23,11 @@ export function FaseReparacion({ orden, onUpdate }: { orden: OrdenDetalle; onUpd
   const save = async (finalizada = false) => {
     finalizada ? setFinalizing(true) : setSaving(true)
     try {
-      await fetch(`${API}/ordenes/${orden.id}/reparacion`, {
+      await fetch(`/api/ordenes/${orden.id}/reparacion`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({ notas, finalizada }),
       })

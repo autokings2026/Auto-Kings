@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface Reporte {
   id: string
@@ -77,8 +76,8 @@ export default function ReporteDetallePage({ params }: { params: { id: string } 
     if (!session?.user || !reporte) return
     setDescargando(true)
     try {
-      const res = await fetch(`${API}/reportes/ordenes/${reporte.id}/pdf`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/reportes/ordenes/${reporte.id}/pdf`, {
+
       })
       if (!res.ok) return
       const blob = await res.blob()
@@ -93,8 +92,8 @@ export default function ReporteDetallePage({ params }: { params: { id: string } 
 
   useEffect(() => {
     if (!session?.user) return
-    fetch(`${API}/reportes/ordenes/${params.id}`, {
-      headers: { Authorization: `Bearer ${session.user.accessToken}` },
+    fetch(`/api/reportes/ordenes/${params.id}`, {
+
     })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(setReporte)

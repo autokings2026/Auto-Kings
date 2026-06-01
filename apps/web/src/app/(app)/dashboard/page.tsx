@@ -1,32 +1,11 @@
 import { auth } from '@/auth'
-import { Car, CalendarDays, ShieldCheck, CheckCircle2, Clock } from 'lucide-react'
+import { Car, CalendarDays, CheckCircle2, Clock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { LABEL_ROL, FaseOT, LABEL_FASE } from '@kings/shared'
 import Link from 'next/link'
-import { formatCurrency } from '@/lib/utils'
+import { getDashboardStats } from '@/lib/services/ordenes'
 
 export const metadata = { title: 'Dashboard | Kings Auto' }
-
-interface Stats {
-  totalActivas: number
-  enEsperaAprobacion: number
-  completadasHoy: number
-  citasHoy: number
-  porFase: Partial<Record<FaseOT, number>>
-}
-
-async function getStats(token: string): Promise<Stats | null> {
-  try {
-    const res = await fetch(`${process.env.API_URL}/ordenes/stats`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: 'no-store',
-    })
-    if (!res.ok) return null
-    return res.json()
-  } catch {
-    return null
-  }
-}
 
 const FASE_COLOR: Partial<Record<FaseOT, string>> = {
   [FaseOT.LLEGADA_FOTOS]:   'bg-cyan-500/20 text-cyan-300',
@@ -41,7 +20,7 @@ export default async function DashboardPage() {
   if (!session) return null
   const { nombre, rol } = session.user
 
-  const stats = await getStats(session.user.accessToken)
+  const stats = await getDashboardStats().catch(() => null)
 
   const cards = [
     {

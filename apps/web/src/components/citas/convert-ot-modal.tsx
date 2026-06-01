@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { TipoCombustible, LABEL_COMBUSTIBLE } from '@kings/shared'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface Usuario { id: string; nombre: string; email: string }
 
@@ -34,10 +33,10 @@ export function ConvertOtModal({ citaId, clienteNombre, vehiculo, onClose }: Pro
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!session?.user?.accessToken) return
+    if (!session?.user) return
     setLoadingUsuarios(true)
-    fetch(`${API}/auth/usuarios`, {
-      headers: { Authorization: `Bearer ${session.user.accessToken}` },
+    fetch(`/api/usuarios`, {
+
     })
       .then(async r => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`)
@@ -56,11 +55,11 @@ export function ConvertOtModal({ citaId, clienteNombre, vehiculo, onClose }: Pro
     if (!tecnicoId || !color || !kilometraje) { setError('Completa todos los campos'); return }
     setSaving(true); setError('')
     try {
-      const res = await fetch(`${API}/ordenes`, {
+      const res = await fetch(`/api/ordenes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({
           citaId,

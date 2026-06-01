@@ -9,7 +9,6 @@ import { formatDate } from '@/lib/utils'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 const WA = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? ''
 
 export function FaseEntrega({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
@@ -35,11 +34,11 @@ export function FaseEntrega({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate
   const registrarEntrega = async () => {
     setRegistering(true)
     try {
-      await fetch(`${API}/ordenes/${orden.id}/entrega`, {
+      await fetch(`/api/ordenes/${orden.id}/entrega`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({}),
       })

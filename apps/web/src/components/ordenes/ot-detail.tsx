@@ -14,7 +14,6 @@ import { FaseCC } from './fase-cc'
 import { FaseEntrega } from './fase-entrega'
 import { EventosTimeline } from './eventos-timeline'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -114,8 +113,8 @@ export function OtDetail({ ordenId }: { ordenId: string }) {
   const fetchOrden = useCallback(async () => {
     if (!session?.user) return
     try {
-      const res = await fetch(`${API}/ordenes/${ordenId}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/ordenes/${ordenId}`, {
+
       })
       if (!res.ok) { router.push('/ordenes'); return }
       const data: OrdenDetalle = await res.json()

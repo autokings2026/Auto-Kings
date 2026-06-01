@@ -7,7 +7,6 @@ import { Loader2, BarChart2, FileDown, ChevronRight, Star, Search, X } from 'luc
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface OTReporte {
   id: string
@@ -45,8 +44,8 @@ export default function ReportesPage() {
       const params = new URLSearchParams({ page: String(page), pageSize: '20' })
       if (desde) params.set('desde', desde)
       if (hasta) params.set('hasta', hasta)
-      const res = await fetch(`${API}/reportes/ordenes?${params}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/reportes/ordenes?${params}`, {
+
       })
       if (res.ok) setResultado(await res.json())
     } finally { setLoading(false) }

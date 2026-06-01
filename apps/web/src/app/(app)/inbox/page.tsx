@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { TipoMensajeWA } from '@kings/shared'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -80,14 +79,12 @@ export default function InboxPage() {
   const [showPlantillas, setShowPlantillas] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
-  const authHeader = useCallback(() => ({
-    Authorization: `Bearer ${session?.user?.accessToken ?? ''}`,
-  }), [session?.user?.accessToken])
+  const authHeader = useCallback(() => ({}), [])
 
   const fetchConversaciones = useCallback(async () => {
     if (!session?.user) return
     try {
-      const res = await fetch(`${API}/inbox/conversaciones`, { headers: authHeader() })
+      const res = await fetch(`/api/inbox/conversaciones`, { headers: authHeader() })
       if (res.ok) setConversaciones(await res.json())
     } finally { setLoadingConv(false) }
   }, [session, authHeader])
@@ -95,7 +92,7 @@ export default function InboxPage() {
   const fetchHilo = useCallback(async (clienteId: string) => {
     setLoadingHilo(true)
     try {
-      const res = await fetch(`${API}/inbox/conversaciones/${clienteId}`, { headers: authHeader() })
+      const res = await fetch(`/api/inbox/conversaciones/${clienteId}`, { headers: authHeader() })
       if (res.ok) {
         const data: Hilo = await res.json()
         setHilo(data)
@@ -110,7 +107,7 @@ export default function InboxPage() {
 
   useEffect(() => {
     if (!session?.user) return
-    fetch(`${API}/inbox/plantillas`, { headers: authHeader() })
+    fetch(`/api/inbox/plantillas`, { headers: authHeader() })
       .then(r => r.ok ? r.json() : [])
       .then(setPlantillas)
   }, [session, authHeader])
@@ -127,7 +124,7 @@ export default function InboxPage() {
     if (!texto.trim() || !hilo) return
     setSending(true)
     try {
-      const res = await fetch(`${API}/inbox/mensajes`, {
+      const res = await fetch(`/api/inbox/mensajes`, {
         method: 'POST',
         headers: { ...authHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ clienteId: hilo.cliente.id, texto }),
@@ -146,7 +143,7 @@ export default function InboxPage() {
     if (!textoEntrante.trim() || !hilo) return
     setSending(true)
     try {
-      const res = await fetch(`${API}/inbox/mensajes/entrante`, {
+      const res = await fetch(`/api/inbox/mensajes/entrante`, {
         method: 'POST',
         headers: { ...authHeader(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ clienteId: hilo.cliente.id, texto: textoEntrante }),

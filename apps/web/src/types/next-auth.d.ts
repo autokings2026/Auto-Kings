@@ -7,7 +7,6 @@ declare module 'next-auth' {
     id: string
     nombre: string
     rol: RolUsuario
-    accessToken: string
   }
 
   interface Session {
@@ -16,7 +15,6 @@ declare module 'next-auth' {
       nombre: string
       email: string
       rol: RolUsuario
-      accessToken: string
     }
     error?: string
   }
@@ -27,7 +25,6 @@ declare module 'next-auth/jwt' {
     id: string
     nombre: string
     rol: RolUsuario
-    accessToken: string
     error?: string
   }
 }

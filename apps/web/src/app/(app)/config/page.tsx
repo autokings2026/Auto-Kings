@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const API         = process.env.NEXT_PUBLIC_API_URL          ?? 'http://localhost:3001'
 const CLOUD_NAME  = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME   ?? ''
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? ''
 
@@ -87,13 +86,13 @@ export default function ConfigPage() {
   const [alertaRoja, setAlertaRoja] = useState(120)
 
   const headers = useCallback(
-    () => ({ Authorization: `Bearer ${session?.user?.accessToken ?? ''}`, 'Content-Type': 'application/json' }),
-    [session?.user?.accessToken],
+    () => ({ 'Content-Type': 'application/json' }),
+    [],
   )
 
   useEffect(() => {
     if (!session?.user) return
-    fetch(`${API}/config/taller`, { headers: headers() })
+    fetch(`/api/config/taller`, { headers: headers() })
       .then(r => r.ok ? r.json() : null)
       .then((data: Config | null) => {
         if (!data) return
@@ -135,7 +134,7 @@ export default function ConfigPage() {
     if (!session?.user) return
     setSaving(true)
     try {
-      const res = await fetch(`${API}/config/taller`, {
+      const res = await fetch(`/api/config/taller`, {
         method: 'PATCH',
         headers: headers(),
         body: JSON.stringify({

@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button'
 import { cn, formatDate } from '@/lib/utils'
 import { FaseOT, RolUsuario } from '@kings/shared'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface OTResumen {
   id: string
@@ -70,8 +69,8 @@ export default function ControlCalidadPage() {
   const fetchOrdenes = useCallback(async () => {
     if (!session?.user) return
     try {
-      const res = await fetch(`${API}/ordenes?fase=${FaseOT.CONTROL_CALIDAD}&pageSize=100`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/ordenes?fase=${FaseOT.CONTROL_CALIDAD}&pageSize=100`, {
+
       })
       if (!res.ok) return
       const json = await res.json()
@@ -86,8 +85,8 @@ export default function ControlCalidadPage() {
     setObservaciones('')
     setError('')
     try {
-      const res = await fetch(`${API}/ordenes/${id}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/ordenes/${id}`, {
+
       })
       if (res.ok) setDetalle(await res.json())
     } finally { setLoadingDetalle(false) }
@@ -106,9 +105,9 @@ export default function ControlCalidadPage() {
     if (!detalle) return
     setSaving(true); setError('')
     try {
-      const res = await fetch(`${API}/ordenes/${detalle.id}/cc`, {
+      const res = await fetch(`/api/ordenes/${detalle.id}/cc`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.user?.accessToken}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aprobado, observaciones: observaciones || undefined }),
       })
       if (!res.ok) { const e = await res.json(); setError(e.message); return }

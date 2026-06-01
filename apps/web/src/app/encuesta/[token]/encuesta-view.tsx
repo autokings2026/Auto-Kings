@@ -5,7 +5,6 @@ import { Star, Loader2, CheckCircle, AlertTriangle, Car, Send } from 'lucide-rea
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface EncuestaData {
   token: string
@@ -79,7 +78,7 @@ export function EncuestaView({ token }: { token: string }) {
   const [formError, setFormError] = useState('')
 
   useEffect(() => {
-    fetch(`${API}/encuesta/${token}`)
+    fetch(`/api/encuesta/${token}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then((d: EncuestaData) => {
         setData(d)
@@ -102,7 +101,7 @@ export function EncuestaView({ token }: { token: string }) {
     setSubmitting(true)
     setFormError('')
     try {
-      const res = await fetch(`${API}/encuesta/${token}`, {
+      const res = await fetch(`/api/encuesta/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ calidad, tiempo, atencion, comentario: comentario.trim() || undefined }),

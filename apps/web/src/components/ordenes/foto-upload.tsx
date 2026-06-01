@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface FotoIngreso {
   id: string
@@ -68,11 +67,11 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
         )
 
         // 2. Guardar en el API
-        const apiRes = await fetch(`${API}/ordenes/${ordenId}/fotos`, {
+        const apiRes = await fetch(`/api/ordenes/${ordenId}/fotos`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.user?.accessToken}`,
+
           },
           body: JSON.stringify({
             url: cloudData.secure_url as string,
@@ -142,9 +141,9 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
   const deleteFoto = async (fotoId: string) => {
     setDeletingId(fotoId)
     try {
-      await fetch(`${API}/ordenes/${ordenId}/fotos/${fotoId}`, {
+      await fetch(`/api/ordenes/${ordenId}/fotos/${fotoId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+
       })
       onUpdate(fotos.filter((f) => f.id !== fotoId))
     } finally {

@@ -11,7 +11,6 @@ import { formatCurrency } from '@/lib/utils'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface ItemRow {
   descripcion: string
@@ -62,11 +61,11 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
     if (!sintoma || !diagnostico) { setError('Completa síntoma y diagnóstico'); return }
     setSaving(true); setError('')
     try {
-      const res = await fetch(`${API}/ordenes/${orden.id}/diagnostico`, {
+      const res = await fetch(`/api/ordenes/${orden.id}/diagnostico`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({
           sintomaCliente: sintoma,
@@ -88,8 +87,8 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
   const enviarWhatsapp = async () => {
     setSendingWa(true)
     try {
-      const res = await fetch(`${API}/ordenes/${orden.id}/whatsapp/cotizacion`, {
-        headers: { Authorization: `Bearer ${session?.user?.accessToken}` },
+      const res = await fetch(`/api/ordenes/${orden.id}/whatsapp/cotizacion`, {
+
       })
       if (!res.ok) { const e = await res.json(); setError(e.message); return }
       const { waLink } = await res.json()
@@ -109,11 +108,11 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
   const registrarAprobacion = async (aprobado: boolean) => {
     setApproving(true)
     try {
-      await fetch(`${API}/ordenes/${orden.id}/diagnostico/aprobacion`, {
+      await fetch(`/api/ordenes/${orden.id}/diagnostico/aprobacion`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({ aprobado }),
       })
@@ -297,7 +296,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
 
                   {/* PDF */}
                   <a
-                    href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'}/cotizacion/pdf/${diag.tokenAprobacion}`}
+                    href={`/api/cotizacion/pdf/${diag.tokenAprobacion}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

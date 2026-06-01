@@ -10,7 +10,6 @@ import { cn, formatDate } from '@/lib/utils'
 import { FaseOT, RolUsuario } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
   const { data: session } = useSession()
@@ -27,11 +26,11 @@ export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () 
     if (!aprobado && !observaciones.trim()) { setError('Las observaciones son requeridas al rechazar'); return }
     setSaving(true); setError('')
     try {
-      await fetch(`${API}/ordenes/${orden.id}/cc`, {
+      await fetch(`/api/ordenes/${orden.id}/cc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken}`,
+
         },
         body: JSON.stringify({ aprobado, observaciones: observaciones || undefined }),
       })

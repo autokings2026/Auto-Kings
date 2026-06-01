@@ -10,7 +10,6 @@ import { Card } from '@/components/ui/card'
 import { cn, formatDate } from '@/lib/utils'
 import { FaseOT, EstadoOT, LABEL_FASE } from '@kings/shared'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface OrdenResumen {
   id: string
@@ -93,8 +92,8 @@ export function OrdenesTable() {
       if (fase) params.set('fase', fase)
       if (debouncedSearch) params.set('search', debouncedSearch)
 
-      const res = await fetch(`${API}/ordenes?${params}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/ordenes?${params}`, {
+
       })
       if (res.ok) setData(await res.json())
     } finally {

@@ -1,16 +1,13 @@
-const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3001'
-
-type FetchOptions = RequestInit & { token?: string }
+type FetchOptions = Omit<RequestInit, 'headers'> & { headers?: Record<string, string> }
 
 async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { token, ...init } = options
+  const { headers = {}, ...init } = options
 
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...init.headers,
+      ...headers,
     },
   })
 
@@ -23,18 +20,18 @@ async function apiFetch<T>(path: string, options: FetchOptions = {}): Promise<T>
 }
 
 export const api = {
-  get: <T>(path: string, token?: string) =>
-    apiFetch<T>(path, { method: 'GET', token }),
+  get: <T>(path: string) =>
+    apiFetch<T>(path, { method: 'GET' }),
 
-  post: <T>(path: string, body: unknown, token?: string) =>
-    apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body), token }),
+  post: <T>(path: string, body: unknown) =>
+    apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body) }),
 
-  put: <T>(path: string, body: unknown, token?: string) =>
-    apiFetch<T>(path, { method: 'PUT', body: JSON.stringify(body), token }),
+  put: <T>(path: string, body: unknown) =>
+    apiFetch<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
 
-  patch: <T>(path: string, body: unknown, token?: string) =>
-    apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body), token }),
+  patch: <T>(path: string, body: unknown) =>
+    apiFetch<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
 
-  delete: <T>(path: string, token?: string) =>
-    apiFetch<T>(path, { method: 'DELETE', token }),
+  delete: <T>(path: string) =>
+    apiFetch<T>(path, { method: 'DELETE' }),
 }

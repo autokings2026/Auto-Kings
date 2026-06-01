@@ -1,8 +1,8 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import { prisma } from '@/lib/prisma'
 import { RolUsuario } from '@kings/shared'
-
-const API_URL = process.env['API_URL'] ?? 'http://localhost:3001'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -15,29 +15,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) return null
 
         try {
-          const res = await fetch(`${API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
+          const user = await prisma.user.findUnique({
+            where: { email: (credentials.email as string).toLowerCase().trim() },
           })
 
-          if (!res.ok) return null
+          if (!user || !user.activo) return null
 
-          const data = (await res.json()) as {
-            accessToken: string
-            user: { id: string; nombre: string; email: string; rol: RolUsuario }
-          }
+          const valid = await bcrypt.compare(credentials.password as string, user.password)
+          if (!valid) return null
 
           return {
-            id: data.user.id,
-            name: data.user.nombre,
-            nombre: data.user.nombre,
-            email: data.user.email,
-            rol: data.user.rol,
-            accessToken: data.accessToken,
+            id: user.id,
+            name: user.nombre,
+            nombre: user.nombre,
+            email: user.email,
+            rol: user.rol as RolUsuario,
           }
         } catch {
           return null
@@ -53,7 +45,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = (user.id ?? '') as string
         token.nombre = user.nombre
         token.rol = user.rol
-        token.accessToken = user.accessToken
       }
       return token
     },
@@ -63,7 +54,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.nombre = token.nombre
       // session.user.email lo gestiona NextAuth automáticamente del JWT
       session.user.rol = token.rol
-      session.user.accessToken = token.accessToken
       if (token.error) session.error = token.error
       return session
     },

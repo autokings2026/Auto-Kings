@@ -10,7 +10,6 @@ import { cn, formatDate } from '@/lib/utils'
 import { EstadoCita } from '@kings/shared'
 import { ConvertOtModal } from './convert-ot-modal'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 type Rango = 'hoy' | 'semana' | 'mes' | 'todas'
 
@@ -93,8 +92,8 @@ export function CitasTable() {
       if (debouncedSearch) params.set('search', debouncedSearch)
       if (estado) params.set('estado', estado)
 
-      const res = await fetch(`${API}/citas?${params}`, {
-        headers: { Authorization: `Bearer ${session.user.accessToken}` },
+      const res = await fetch(`/api/citas?${params}`, {
+
       })
       if (res.ok) setData(await res.json())
     } finally {
@@ -114,11 +113,11 @@ export function CitasTable() {
     if (!session?.user) return
     setUpdatingId(id)
     try {
-      await fetch(`${API}/citas/${id}/estado`, {
+      await fetch(`/api/citas/${id}/estado`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.user.accessToken}`,
+
         },
         body: JSON.stringify({ estado: nuevoEstado }),
       })

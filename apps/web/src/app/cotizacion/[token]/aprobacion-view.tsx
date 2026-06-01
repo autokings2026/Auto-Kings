@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { CheckCircle, XCircle, Loader2, FileDown, AlertTriangle, Car } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
 interface CotizacionData {
   token: string
@@ -35,7 +34,7 @@ export function AprobacionView({ token }: { token: string }) {
   const [done, setDone] = useState<boolean | null>(null)
 
   useEffect(() => {
-    fetch(`${API}/cotizacion/public/${token}`)
+    fetch(`/api/cotizacion/public/${token}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(setData)
       .catch(() => setError('Cotización no encontrada o enlace inválido.'))
@@ -46,7 +45,7 @@ export function AprobacionView({ token }: { token: string }) {
     if (!aprobado && !mensaje.trim()) { setRechazando(true); return }
     setSubmitting(aprobado ? 'aprobar' : 'rechazar')
     try {
-      const res = await fetch(`${API}/cotizacion/public/${token}/responder`, {
+      const res = await fetch(`/api/cotizacion/public/${token}/responder`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aprobado, mensaje: mensaje || undefined }),
@@ -162,7 +161,7 @@ export function AprobacionView({ token }: { token: string }) {
         </div>
 
         {/* PDF */}
-        <a href={`${API}/cotizacion/pdf/${token}`} target="_blank" rel="noopener noreferrer">
+        <a href={`/api/cotizacion/pdf/${token}`} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" className="w-full border-gray-700 text-gray-300">
             <FileDown className="h-4 w-4 mr-2" />
             Descargar cotización en PDF
