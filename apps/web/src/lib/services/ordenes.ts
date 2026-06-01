@@ -9,7 +9,7 @@ import {
   ORDEN_FASES,
   RolUsuario,
 } from '@kings/shared'
-import type { Prisma } from '@kings/database'
+import type { Prisma } from '@prisma/client'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

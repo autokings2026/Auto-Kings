@@ -2,8 +2,6 @@
   "name": "@kings/database",
   "version": "0.0.1",
   "private": true,
-  "main": "./generated/client/index.js",
-  "types": "./generated/client/index.d.ts",
   "scripts": {
     "build": "prisma generate",
     "db:generate": "prisma generate",
@@ -24,14 +22,5 @@
     "prisma": "^6.2.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
-  },
-  "prisma": {
-    "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts"
-  },
-  "exports": {
-    ".": {
-      "types": "./generated/client/index.d.ts",
-      "default": "./generated/client/index.js"
-    }
   }
 }

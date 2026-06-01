@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { Prisma } from '@kings/database'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAuth, requireRole, unauthorized, forbidden } from '@/lib/auth-helpers'
 import { RolUsuario } from '@kings/shared'

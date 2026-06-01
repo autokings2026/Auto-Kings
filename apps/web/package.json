@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate --schema=../../packages/database/prisma/schema.prisma",
     "build": "next build",
     "dev": "next dev --port 3000",
     "start": "next start",
@@ -10,7 +11,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@kings/database": "workspace:*",
+    "@prisma/client": "^6.2.1",
     "@kings/shared": "workspace:*",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-label": "^2.1.2",
@@ -37,6 +38,7 @@
     "jose": "^5.10.0"
   },
   "devDependencies": {
+    "prisma": "^6.2.1",
     "@types/node": "^22.0.0",
     "@types/pdfkit": "^0.17.6",
     "@types/bcryptjs": "^2.4.6",
