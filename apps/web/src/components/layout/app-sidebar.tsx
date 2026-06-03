@@ -13,6 +13,8 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
+  Users,
+  X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -42,6 +44,12 @@ const navItems: NavItem[] = [
     roles: [RolUsuario.ADMIN],
   },
   {
+    href: '/equipo',
+    label: 'Equipo de Trabajo',
+    icon: Users,
+    roles: [RolUsuario.ADMIN],
+  },
+  {
     href: '/config',
     label: 'Configuración',
     icon: Settings,
@@ -55,9 +63,10 @@ interface AppSidebarProps {
     email: string
     rol: RolUsuario
   }
+  onClose?: () => void
 }
 
-export function AppSidebar({ user }: AppSidebarProps) {
+export function AppSidebar({ user, onClose }: AppSidebarProps) {
   const pathname = usePathname()
 
   const visibleItems = navItems.filter(
@@ -67,15 +76,24 @@ export function AppSidebar({ user }: AppSidebarProps) {
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-surface">
       {/* Logo */}
-      <div className="flex items-center justify-center px-4 py-4 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border">
         <Image
           src="/logo-dark.jpeg"
           alt="Kings Auto Diagnósticos"
-          width={180}
-          height={90}
+          width={160}
+          height={80}
           priority
           className="rounded-lg"
         />
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-muted-foreground hover:bg-surface-2 hover:text-foreground transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -86,6 +104,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive

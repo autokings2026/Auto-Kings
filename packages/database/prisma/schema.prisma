@@ -110,14 +110,18 @@ enum TipoPlantillaWA {
 // ─────────────────────────────────────────
 
 model User {
-  id        String     @id @default(cuid())
-  nombre    String
-  email     String     @unique
-  password  String     // bcrypt hash
-  rol       RolUsuario @default(EMPLEADO)
-  activo    Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id                         String     @id @default(cuid())
+  nombre                     String
+  email                      String     @unique
+  password                   String
+  rol                        RolUsuario @default(EMPLEADO)
+  activo                     Boolean    @default(true)
+  telefono                   String?
+  fechaIngreso               DateTime?
+  contactoEmergenciaNombre   String?
+  contactoEmergenciaTelefono String?
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
 
   // Relaciones
   ordenesAsignadas OrdenTrabajo[]  @relation("TecnicoOrdenes")
