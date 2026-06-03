@@ -65,9 +65,9 @@ async function main() {
   // ─── 5. Plantillas de mensajes de WhatsApp ─────────────────────────────────
   const plantillas = [
     {
-      nombre: 'Confirmación de cita',
+      nombre: 'Recepción del vehículo',
       tipo: TipoPlantillaWA.CONFIRMAR_CITA,
-      contenido: `Hola {{nombre_cliente}} 👋, te confirmamos tu cita en *Kings Auto Diagnósticos* para el *{{fecha_cita}}* a las *{{hora_cita}}*. Por favor llega puntual con tu vehículo {{marca}} {{modelo}} (placa {{placa}}). ¡Te esperamos!`,
+      contenido: `Hola {{nombre_cliente}}, le notificamos que hemos recibido su vehículo {{marca}} {{modelo}} (placa {{placa}}) en nuestras instalaciones. Nuestro equipo ya está trabajando en el diagnóstico y le estaremos informando sobre el estado de su vehículo. Gracias por confiar en Kings Auto Diagnósticos. 🔧`,
     },
     {
       nombre: 'Diagnóstico listo',
@@ -206,6 +206,30 @@ async function main() {
   }
   console.log(`✅ ${vehiculosBase.length} marcas y modelos base cargados`)
   console.log('   💡 Para importar la lista completa, ejecuta: pnpm db:seed:vehicles')
+
+  // ─── 7. Tipos de foto para ingreso de vehículos ────────────────────────────
+  const tiposFoto = [
+    { nombre: 'Odómetro (Km/Mi)',         orden: 1 },
+    { nombre: 'Tanque de combustible',    orden: 2 },
+    { nombre: 'Frente del vehículo',      orden: 3 },
+    { nombre: 'Parte trasera',            orden: 4 },
+    { nombre: 'Lateral izquierdo',        orden: 5 },
+    { nombre: 'Lateral derecho',          orden: 6 },
+    { nombre: 'Interior / Tablero',       orden: 7 },
+    { nombre: 'Rayones / Daños',          orden: 8 },
+    { nombre: 'Motor',                    orden: 9 },
+    { nombre: 'Llanta / Rin',            orden: 10 },
+    { nombre: 'Otro',                     orden: 99 },
+  ]
+
+  for (const tipo of tiposFoto) {
+    await prisma.tipoFoto.upsert({
+      where: { nombre: tipo.nombre },
+      update: { orden: tipo.orden },
+      create: tipo,
+    })
+  }
+  console.log(`✅ ${tiposFoto.length} tipos de foto cargados`)
 
   console.log('\n🎉 Seed completado exitosamente!')
   console.log('\n📋 Credenciales iniciales:')

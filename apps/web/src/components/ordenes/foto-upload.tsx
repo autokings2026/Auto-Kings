@@ -1,19 +1,32 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Upload, X, Loader2, ImageIcon, CheckCircle } from 'lucide-react'
+import { Upload, X, Loader2, ImageIcon, CheckCircle, Tag } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+
+interface TipoFoto {
+  id: string
+  nombre: string
+}
 
 interface FotoIngreso {
   id: string
   url: string
   publicId: string
   createdAt: string
+  tipoFoto?: { id: string; nombre: string } | null
 }
 
 interface FotoUploadProps {
@@ -24,12 +37,13 @@ interface FotoUploadProps {
 }
 
 interface UploadItem {
-  id: string          // id local para tracking
+  id: string
   file: File
   preview: string
   progress: number
   status: 'pending' | 'uploading' | 'done' | 'error'
   error?: string
+  tipoFotoId?: string | null
 }
 
 export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoUploadProps) {
@@ -38,6 +52,18 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
+  const [tipos, setTipos] = useState<TipoFoto[]>([])
+  const [tipoSeleccionado, setTipoSeleccionado] = useState<string>('')
+
+  // ── Cargar tipos desde la API ─────────────────────────────────────────────
+
+  useEffect(() => {
+    if (readonly) return
+    fetch('/api/tipos-foto')
+      .then((r) => r.json())
+      .then((data: TipoFoto[]) => setTipos(data))
+      .catch(() => null)
+  }, [readonly])
 
   // ── Upload a Cloudinary ──────────────────────────────────────────────────
 
@@ -48,7 +74,6 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
       )
 
       try {
-        // 1. Subir a Cloudinary
         const formData = new FormData()
         formData.append('file', item.file)
         formData.append('upload_preset', UPLOAD_PRESET)
@@ -66,16 +91,13 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
           q.map((i) => (i.id === item.id ? { ...i, progress: 70 } : i)),
         )
 
-        // 2. Guardar en el API
         const apiRes = await fetch(`/api/ordenes/${ordenId}/fotos`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             url: cloudData.secure_url as string,
             publicId: cloudData.public_id as string,
+            tipoFotoId: item.tipoFotoId ?? null,
           }),
         })
 
@@ -88,7 +110,6 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
 
         onUpdate([...fotos, nueva])
 
-        // Limpiar del queue después de 2s
         setTimeout(() => {
           setQueue((q) => q.filter((i) => i.id !== item.id))
         }, 2000)
@@ -115,7 +136,7 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
 
       for (const file of Array.from(files)) {
         if (!allowed.includes(file.type) && !file.name.match(/\.(heic|heif)$/i)) continue
-        if (file.size > 10 * 1024 * 1024) continue // max 10 MB
+        if (file.size > 10 * 1024 * 1024) continue
 
         const item: UploadItem = {
           id: `${Date.now()}-${Math.random()}`,
@@ -123,17 +144,16 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
           preview: URL.createObjectURL(file),
           progress: 0,
           status: 'pending',
+          tipoFotoId: tipoSeleccionado || null,
         }
         newItems.push(item)
       }
 
       if (newItems.length === 0) return
       setQueue((q) => [...q, ...newItems])
-
-      // Subir en paralelo
       newItems.forEach((item) => uploadOne(item))
     },
-    [readonly, uploadOne],
+    [readonly, uploadOne, tipoSeleccionado],
   )
 
   // ── Eliminar foto ─────────────────────────────────────────────────────────
@@ -141,10 +161,7 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
   const deleteFoto = async (fotoId: string) => {
     setDeletingId(fotoId)
     try {
-      await fetch(`/api/ordenes/${ordenId}/fotos/${fotoId}`, {
-        method: 'DELETE',
-
-      })
+      await fetch(`/api/ordenes/${ordenId}/fotos/${fotoId}`, { method: 'DELETE' })
       onUpdate(fotos.filter((f) => f.id !== fotoId))
     } finally {
       setDeletingId(null)
@@ -166,37 +183,62 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
 
   return (
     <div className="space-y-4">
-      {/* Zona de drop */}
+      {/* Selector de tipo + zona de drop */}
       {!readonly && (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          className={cn(
-            'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-colors',
-            dragging
-              ? 'border-secondary bg-secondary/10'
-              : 'border-surface-2 hover:border-secondary/50 hover:bg-surface-2/50',
-          )}
-        >
-          <Upload className="h-8 w-8 text-muted-foreground" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-white">
-              Arrastra fotos aquí o haz click para seleccionar
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              JPG, PNG, WebP · Máx. 10 MB por foto
-            </p>
+        <div className="space-y-3">
+          {/* Dropdown de tipo */}
+          <div className="flex items-center gap-2">
+            <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
+            <Select value={tipoSeleccionado} onValueChange={setTipoSeleccionado}>
+              <SelectTrigger className="flex-1 bg-surface-2 border-surface-2 text-sm h-9">
+                <SelectValue placeholder="Selecciona el tipo de foto…" />
+              </SelectTrigger>
+              <SelectContent className="bg-surface border-surface-2">
+                {tipos.map((t) => (
+                  <SelectItem key={t.id} value={t.id} className="text-sm">
+                    {t.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => processFiles(e.target.files)}
-          />
+
+          {/* Zona de drop */}
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              'flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-colors',
+              dragging
+                ? 'border-secondary bg-secondary/10'
+                : 'border-surface-2 hover:border-secondary/50 hover:bg-surface-2/50',
+            )}
+          >
+            <Upload className="h-8 w-8 text-muted-foreground" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-white">
+                Arrastra fotos aquí o haz click para seleccionar
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                JPG, PNG, WebP · Máx. 10 MB por foto
+              </p>
+              {tipoSeleccionado && tipos.length > 0 && (
+                <p className="text-xs text-accent mt-1">
+                  Tipo: {tipos.find((t) => t.id === tipoSeleccionado)?.nombre}
+                </p>
+              )}
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => processFiles(e.target.files)}
+            />
+          </div>
         </div>
       )}
 
@@ -214,11 +256,19 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
           <div key={foto.id} className="group relative aspect-square rounded-lg overflow-hidden bg-surface-2">
             <Image
               src={foto.url}
-              alt="Foto de ingreso"
+              alt={foto.tipoFoto?.nombre ?? 'Foto de ingreso'}
               fill
               className="object-cover"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
             />
+            {/* Etiqueta del tipo */}
+            {foto.tipoFoto && (
+              <div className="absolute bottom-0 inset-x-0 bg-black/70 px-1.5 py-1">
+                <p className="text-white text-[10px] leading-tight truncate text-center">
+                  {foto.tipoFoto.nombre}
+                </p>
+              </div>
+            )}
             {!readonly && (
               <button
                 onClick={() => deleteFoto(foto.id)}
@@ -238,15 +288,9 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
         {/* Fotos en cola (subiendo) */}
         {queue.map((item) => (
           <div key={item.id} className="relative aspect-square rounded-lg overflow-hidden bg-surface-2">
-            {/* Preview */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.preview}
-              alt="preview"
-              className="w-full h-full object-cover"
-            />
+            <img src={item.preview} alt="preview" className="w-full h-full object-cover" />
 
-            {/* Overlay */}
             <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-1.5">
               {item.status === 'uploading' && (
                 <>

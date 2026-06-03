@@ -242,7 +242,10 @@ export async function findOneOrden(id: string) {
       marca: true,
       modelo: true,
       cita: { select: { id: true, fecha: true, hora: true } },
-      fotos: { orderBy: { createdAt: 'asc' } },
+      fotos: {
+        orderBy: { createdAt: 'asc' },
+        include: { tipoFoto: { select: { id: true, nombre: true } } },
+      },
       diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
       reparacion: { include: { tecnico: { select: { id: true, nombre: true } } } },
       controlesCC: {
@@ -317,13 +320,24 @@ export async function avanzarFase(id: string, userId: string) {
 
 // ── Fotos ─────────────────────────────────────────────────────────────────────
 
-export async function addFoto(id: string, dto: { url: string; publicId: string }, userId: string) {
+export async function addFoto(
+  id: string,
+  dto: { url: string; publicId: string; tipoFotoId?: string | null },
+  userId: string,
+) {
   const orden = await prisma.ordenTrabajo.findUnique({ where: { id } })
   if (!orden) notFound('OT no encontrada')
 
   return prisma.$transaction(async (tx) => {
     const foto = await tx.fotoIngreso.create({
-      data: { ordenId: id, url: dto.url, publicId: dto.publicId, creadoPorId: userId },
+      data: {
+        ordenId: id,
+        url: dto.url,
+        publicId: dto.publicId,
+        creadoPorId: userId,
+        ...(dto.tipoFotoId ? { tipoFotoId: dto.tipoFotoId } : {}),
+      },
+      include: { tipoFoto: { select: { id: true, nombre: true } } },
     })
     await tx.eventoOT.create({
       data: {
@@ -687,11 +701,16 @@ export async function getDashboardStats() {
   const manana = new Date(hoy)
   manana.setDate(hoy.getDate() + 1)
 
-  const [totalActivas, enEsperaAprobacion, completadasHoy, citasHoy, porFase] = await Promise.all([
+  // Semana calendario (lunes → domingo)
+  const diasDesdeLunes = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
+  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - diasDesdeLunes)
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 7)
+
+  const [totalActivas, enEsperaAprobacion, completadasHoy, citasSemana, porFase] = await Promise.all([
     prisma.ordenTrabajo.count({ where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.EN_ESPERA_APROBACION } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.COMPLETADA, updatedAt: { gte: hoy, lt: manana } } }),
-    prisma.cita.count({ where: { fecha: hoy, estado: { notIn: [EstadoCita.CANCELADA, EstadoCita.CONVERTIDA] } } }),
+    prisma.cita.count({ where: { fecha: { gte: lunes, lt: domingo }, estado: { notIn: [EstadoCita.CANCELADA, EstadoCita.CONVERTIDA] } } }),
     prisma.ordenTrabajo.groupBy({
       by: ['faseActual'],
       where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } },
@@ -703,7 +722,7 @@ export async function getDashboardStats() {
     totalActivas,
     enEsperaAprobacion,
     completadasHoy,
-    citasHoy,
+    citasHoy: citasSemana,
     porFase: Object.fromEntries(porFase.map((f) => [f.faseActual, f._count])),
   }
 }

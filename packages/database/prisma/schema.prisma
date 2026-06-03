@@ -262,17 +262,29 @@ model OrdenTrabajo {
 // FASE 1 — FOTOS DE INGRESO
 // ─────────────────────────────────────────
 
+model TipoFoto {
+  id     String      @id @default(cuid())
+  nombre String      @unique
+  activo Boolean     @default(true)
+  orden  Int         @default(0)
+  fotos  FotoIngreso[]
+
+  @@map("tipos_foto")
+}
+
 model FotoIngreso {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   ordenId     String
-  url         String   // URL pública de Cloudinary
-  publicId    String   // public_id de Cloudinary (para eliminar/transformar)
+  url         String
+  publicId    String
+  tipoFotoId  String?
   creadoPorId String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   // Relaciones
   orden     OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
   creadoPor User         @relation("FotoCreadaPor", fields: [creadoPorId], references: [id], onDelete: Restrict)
+  tipoFoto  TipoFoto?   @relation(fields: [tipoFotoId], references: [id])
 
   @@index([ordenId])
   @@map("fotos_ingreso")

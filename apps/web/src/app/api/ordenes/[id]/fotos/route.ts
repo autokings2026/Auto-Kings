@@ -4,8 +4,9 @@ import { requireAuth, unauthorized } from '@/lib/auth-helpers'
 import { addFoto } from '@/lib/services/ordenes'
 
 const Schema = z.object({
-  url:      z.string().url(),
-  publicId: z.string().min(1),
+  url:        z.string().url(),
+  publicId:   z.string().min(1),
+  tipoFotoId: z.string().cuid().optional().nullable(),
 })
 
 export async function POST(
