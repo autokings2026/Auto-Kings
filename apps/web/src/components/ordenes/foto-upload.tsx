@@ -5,13 +5,6 @@ import { useSession } from 'next-auth/react'
 import { Upload, X, Loader2, ImageIcon, CheckCircle, Tag } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!
 const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
@@ -189,18 +182,16 @@ export function FotoUpload({ ordenId, fotos, onUpdate, readonly = false }: FotoU
           {/* Dropdown de tipo */}
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-muted-foreground shrink-0" />
-            <Select value={tipoSeleccionado} onValueChange={setTipoSeleccionado}>
-              <SelectTrigger className="flex-1 bg-surface-2 border-surface-2 text-sm h-9">
-                <SelectValue placeholder="Selecciona el tipo de foto…" />
-              </SelectTrigger>
-              <SelectContent className="bg-surface border-surface-2">
-                {tipos.map((t) => (
-                  <SelectItem key={t.id} value={t.id} className="text-sm">
-                    {t.nombre}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <select
+              value={tipoSeleccionado}
+              onChange={(e) => setTipoSeleccionado(e.target.value)}
+              className="flex-1 h-9 rounded-md bg-surface-2 border border-surface-2 text-sm text-white px-3 outline-none focus:ring-1 focus:ring-secondary"
+            >
+              <option value="">Selecciona el tipo de foto…</option>
+              {tipos.map((t) => (
+                <option key={t.id} value={t.id}>{t.nombre}</option>
+              ))}
+            </select>
           </div>
 
           {/* Zona de drop */}

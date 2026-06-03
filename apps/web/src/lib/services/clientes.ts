@@ -6,6 +6,14 @@ export async function findOrCreateCliente(dto: {
   email?: string
 }) {
   const existing = await prisma.cliente.findFirst({ where: { telefono: dto.telefono } })
-  if (existing) return existing
+  if (existing) {
+    return prisma.cliente.update({
+      where: { id: existing.id },
+      data: {
+        nombre: dto.nombre,
+        ...(dto.email ? { email: dto.email } : {}),
+      },
+    })
+  }
   return prisma.cliente.create({ data: dto })
 }
