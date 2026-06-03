@@ -1,18 +1,16 @@
 import nodemailer from 'nodemailer'
 
-const GMAIL_USER  = process.env['GMAIL_USER']
-const GMAIL_PASS  = process.env['GMAIL_APP_PASSWORD']
-const FROM_NAME   = 'Kings Auto Diagnósticos'
+const FROM_NAME = 'Kings Auto Diagnósticos'
 
-function createTransporter() {
-  if (!GMAIL_USER || !GMAIL_PASS) return null
+function getTransporter() {
+  const user = process.env['GMAIL_USER']
+  const pass = process.env['GMAIL_APP_PASSWORD']?.replace(/\s/g, '')
+  if (!user || !pass) return null
   return nodemailer.createTransport({
     service: 'gmail',
-    auth: { user: GMAIL_USER, pass: GMAIL_PASS },
+    auth: { user, pass },
   })
 }
-
-const transporter = createTransporter()
 
 interface CitaEmailData {
   to: string
@@ -81,13 +79,14 @@ function htmlConfirmacionCita(d: Omit<CitaEmailData, 'to'>): string {
 }
 
 export async function sendConfirmacionCita(data: CitaEmailData): Promise<void> {
+  const transporter = getTransporter()
   if (!transporter) {
-    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — confirmación no enviada a', data.to)
+    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — email no enviado a', data.to)
     return
   }
   try {
     const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${GMAIL_USER}>`,
+      from: `"${FROM_NAME}" <${process.env['GMAIL_USER']}>`,
       to: data.to,
       subject: `✅ Cita confirmada — ${data.fecha} a las ${data.hora}`,
       html: htmlConfirmacionCita(data),
@@ -95,12 +94,14 @@ export async function sendConfirmacionCita(data: CitaEmailData): Promise<void> {
     console.log('[Email] Confirmación enviada a', data.to, 'messageId:', info.messageId)
   } catch (err) {
     console.error('[Email] Error al enviar confirmación a', data.to, err)
+    throw err
   }
 }
 
 export async function sendRecordatorioCita(data: CitaEmailData): Promise<void> {
+  const transporter = getTransporter()
   if (!transporter) {
-    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — recordatorio no enviado a', data.to)
+    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — email no enviado a', data.to)
     return
   }
   const html = htmlConfirmacionCita(data).replace(
@@ -109,7 +110,7 @@ export async function sendRecordatorioCita(data: CitaEmailData): Promise<void> {
   )
   try {
     await transporter.sendMail({
-      from: `"${FROM_NAME}" <${GMAIL_USER}>`,
+      from: `"${FROM_NAME}" <${process.env['GMAIL_USER']}>`,
       to: data.to,
       subject: `⏰ Recordatorio — Tu cita es mañana a las ${data.hora}`,
       html,

@@ -18,6 +18,8 @@
         "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET",
         "RESEND_API_KEY",
         "RESEND_FROM_EMAIL",
+        "GMAIL_USER",
+        "GMAIL_APP_PASSWORD",
         "JWT_SECRET",
         "NEXT_PUBLIC_APP_URL",
         "NEXT_PUBLIC_APP_NAME",

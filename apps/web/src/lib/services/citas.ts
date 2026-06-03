@@ -85,7 +85,7 @@ export async function createCita(dto: {
 
   if (cliente.email) {
     const config = await prisma.configuracionTaller.findFirst()
-    sendConfirmacionCita({
+    await sendConfirmacionCita({
       to: cliente.email,
       nombre: cliente.nombre,
       fecha: formatFecha(cita.fecha),
@@ -95,9 +95,8 @@ export async function createCita(dto: {
       anio: cita.anio,
       placa: cita.placa,
       telefonoTaller: config?.telefono ?? '',
-    }).then(() =>
-      prisma.cita.update({ where: { id: cita.id }, data: { emailEnviado: true } })
-    ).catch(() => null)
+    })
+    await prisma.cita.update({ where: { id: cita.id }, data: { emailEnviado: true } }).catch(() => null)
   }
 
   return {
@@ -131,11 +130,16 @@ export async function findAllCitas(query: {
       const manana = new Date(hoy); manana.setDate(hoy.getDate() + 1)
       where['fecha'] = { gte: hoy, lt: manana }
     } else if (rango === 'semana') {
-      const fin = new Date(hoy); fin.setDate(hoy.getDate() + 7)
-      where['fecha'] = { gte: hoy, lt: fin }
+      // Lunes de la semana actual
+      const diasDesdelunes = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
+      const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - diasDesdelunes)
+      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 7)
+      where['fecha'] = { gte: lunes, lt: domingo }
     } else if (rango === 'mes') {
-      const fin = new Date(hoy); fin.setMonth(hoy.getMonth() + 1)
-      where['fecha'] = { gte: hoy, lt: fin }
+      // Mes calendario completo
+      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+      const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
+      where['fecha'] = { gte: inicioMes, lt: finMes }
     }
   }
 
