@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Users, Plus, Pencil, Power, Eye, EyeOff, Loader2,
-  Phone, Mail, Calendar, UserCheck, AlertCircle, ShieldCheck, Wrench,
+  Phone, Mail, Calendar, AlertCircle, ShieldCheck, Wrench, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -109,11 +109,10 @@ export default function EquipoPage() {
         contactoEmergenciaTelefono: form.contactoEmergenciaTelefono || null,
       }
       if (form.password) payload['password'] = form.password
+      if (modal === 'crear') payload['password'] = form.password
 
       const url = modal === 'crear' ? '/api/usuarios' : `/api/usuarios/${selected!.id}`
       const method = modal === 'crear' ? 'POST' : 'PUT'
-
-      if (modal === 'crear') payload['password'] = form.password
 
       const res = await fetch(url, {
         method,
@@ -149,22 +148,26 @@ export default function EquipoPage() {
   const inactivos = miembros.filter(m => !m.activo)
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="h-6 w-6 text-accent" />
-            Equipo de Trabajo
+    <div className="space-y-5 max-w-5xl mx-auto">
+      {/* Header — compacto en móvil */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="h-5 w-5 sm:h-6 sm:w-6 text-accent shrink-0" />
+            <span className="truncate">Equipo de Trabajo</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             {activos.length} miembro{activos.length !== 1 ? 's' : ''} activo{activos.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Button variant="primary" onClick={abrirCrear} className="gap-2">
+        {/* En móvil solo el ícono, en desktop texto completo */}
+        <button
+          onClick={abrirCrear}
+          className="shrink-0 flex items-center gap-2 bg-secondary hover:bg-secondary/90 text-white text-sm font-medium rounded-lg px-3 py-2 sm:px-4 transition-colors"
+        >
           <Plus className="h-4 w-4" />
-          Nuevo miembro
-        </Button>
+          <span className="hidden sm:inline">Nuevo miembro</span>
+        </button>
       </div>
 
       {/* Lista */}
@@ -192,10 +195,17 @@ export default function EquipoPage() {
               sessionId={session?.user?.id}
             />
           )}
+          {activos.length === 0 && inactivos.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
+              <p className="text-sm">No hay miembros registrados.</p>
+              <p className="text-xs mt-1">Agrega el primer miembro con el botón superior.</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Modal — bottom sheet en móvil, centrado en desktop */}
       {modal && (
         <ModalMiembro
           modo={modal}
@@ -229,7 +239,8 @@ function MiembrosGrid({
   return (
     <div>
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{titulo}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 1 col mobile → 2 col sm → 3 col lg */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {miembros.map(m => (
           <TarjetaMiembro
             key={m.id}
@@ -261,61 +272,67 @@ function TarjetaMiembro({
 
   return (
     <div className={cn(
-      'bg-surface border border-surface-2 rounded-xl p-4 space-y-3 transition-opacity',
+      'bg-surface border border-surface-2 rounded-xl p-4 flex flex-col gap-3 transition-opacity',
       !m.activo && 'opacity-50',
     )}>
-      {/* Nombre + rol */}
+      {/* Nombre + rol + badge */}
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-semibold text-foreground truncate">{m.nombre}</p>
-          <div className={cn('flex items-center gap-1 text-xs mt-0.5', rolColor)}>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-foreground leading-tight truncate">{m.nombre}</p>
+          <div className={cn('flex items-center gap-1 text-xs mt-1', rolColor)}>
             <RolIcon className="h-3 w-3 shrink-0" />
             {LABEL_ROL[m.rol]}
           </div>
         </div>
         {esYo && (
-          <span className="shrink-0 text-[10px] bg-primary/20 text-accent border border-primary/30 rounded-full px-2 py-0.5">
+          <span className="shrink-0 text-[10px] bg-primary/20 text-accent border border-primary/30 rounded-full px-2 py-0.5 mt-0.5">
             Tú
           </span>
         )}
       </div>
 
-      {/* Datos */}
-      <div className="space-y-1.5 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2 truncate">
+      {/* Datos — flex-1 para que los botones queden siempre abajo */}
+      <div className="flex-1 space-y-1.5 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 min-w-0">
           <Mail className="h-3 w-3 shrink-0" />
           <span className="truncate">{m.email}</span>
         </div>
         {m.telefono && (
           <div className="flex items-center gap-2">
             <Phone className="h-3 w-3 shrink-0" />
-            {m.telefono}
+            <a href={`tel:${m.telefono}`} className="hover:text-foreground transition-colors">
+              {m.telefono}
+            </a>
           </div>
         )}
         {m.fechaIngreso && (
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 shrink-0" />
-            Desde {new Date(m.fechaIngreso).toLocaleDateString('es-HN', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })}
+            Desde {new Date(m.fechaIngreso).toLocaleDateString('es-HN', {
+              year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
+            })}
           </div>
         )}
         {m.contactoEmergenciaNombre && (
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-3 w-3 shrink-0 text-yellow-500" />
-            <span className="truncate">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-3 w-3 shrink-0 text-yellow-500 mt-0.5" />
+            <span className="leading-snug">
               {m.contactoEmergenciaNombre}
-              {m.contactoEmergenciaTelefono ? ` · ${m.contactoEmergenciaTelefono}` : ''}
+              {m.contactoEmergenciaTelefono ? (
+                <><br /><a href={`tel:${m.contactoEmergenciaTelefono}`} className="hover:text-foreground">{m.contactoEmergenciaTelefono}</a></>
+              ) : null}
             </span>
           </div>
         )}
       </div>
 
-      {/* Acciones */}
-      <div className="flex gap-2 pt-1 border-t border-surface-2">
+      {/* Acciones — altura mínima para toque cómodo */}
+      <div className="flex gap-1 pt-2 border-t border-surface-2">
         <button
           onClick={() => onEditar(m)}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded hover:bg-surface-2"
+          className="flex flex-1 items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground active:bg-surface-2 transition-colors px-2 py-2.5 rounded-lg hover:bg-surface-2"
         >
-          <Pencil className="h-3 w-3" />
+          <Pencil className="h-3.5 w-3.5" />
           Editar
         </button>
         {!esYo && (
@@ -323,17 +340,13 @@ function TarjetaMiembro({
             onClick={() => onToggle(m)}
             disabled={toggling}
             className={cn(
-              'flex items-center gap-1.5 text-xs transition-colors px-2 py-1 rounded ml-auto',
+              'flex flex-1 items-center justify-center gap-1.5 text-xs transition-colors px-2 py-2.5 rounded-lg',
               m.activo
-                ? 'text-muted-foreground hover:text-destructive hover:bg-destructive/10'
-                : 'text-green-400 hover:text-green-300 hover:bg-green-400/10',
+                ? 'text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:bg-destructive/20'
+                : 'text-green-400 hover:text-green-300 hover:bg-green-400/10 active:bg-green-400/20',
             )}
           >
-            {toggling ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <Power className="h-3 w-3" />
-            )}
+            {toggling ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />}
             {m.activo ? 'Desactivar' : 'Activar'}
           </button>
         )}
@@ -342,7 +355,7 @@ function TarjetaMiembro({
   )
 }
 
-// ── Modal crear / editar ───────────────────────────────────────────────────────
+// ── Modal — bottom sheet en móvil, centrado en desktop ────────────────────────
 
 function ModalMiembro({
   modo, form, setForm, onGuardar, onCerrar, saving, error, showPass, setShowPass,
@@ -361,72 +374,85 @@ function ModalMiembro({
     setForm({ ...form, [k]: e.target.value })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-surface border border-surface-2 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-black/60 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onCerrar() }}
+    >
+      {/*
+        Móvil: panel desde abajo, bordes redondeados arriba, altura máxima 92vh
+        Desktop: modal centrado, max-w-lg, bordes redondeados en todos los lados
+      */}
+      <div className="bg-surface border border-surface-2 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[88vh]">
+        {/* Handle visual (solo móvil) */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-surface-2" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-2">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-surface-2 shrink-0">
           <h2 className="text-base font-semibold text-foreground">
             {modo === 'crear' ? 'Nuevo miembro' : 'Editar miembro'}
           </h2>
-          <button onClick={onCerrar} className="text-muted-foreground hover:text-foreground transition-colors">
-            ✕
+          <button
+            onClick={onCerrar}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5">
-          {/* Datos personales */}
+        {/* Body — scrollable */}
+        <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-4 space-y-5">
           <Section label="Datos personales">
-            <Field label="Nombre completo *">
-              <input
-                value={form.nombre}
-                onChange={set('nombre')}
-                placeholder="Carlos Méndez"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Correo electrónico *">
-              <input
-                type="email"
-                value={form.email}
-                onChange={set('email')}
-                placeholder="carlos@kingsauto.hn"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Teléfono">
-              <input
-                value={form.telefono}
-                onChange={set('telefono')}
-                placeholder="9999-9999"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Fecha de ingreso">
-              <input
-                type="date"
-                value={form.fechaIngreso}
-                onChange={set('fechaIngreso')}
-                className={inputCls}
-              />
-            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Nombre completo *" className="sm:col-span-2">
+                <input
+                  value={form.nombre}
+                  onChange={set('nombre')}
+                  placeholder="Carlos Méndez"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Correo electrónico *" className="sm:col-span-2">
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={set('email')}
+                  placeholder="carlos@kingsauto.hn"
+                  className={inputCls}
+                  inputMode="email"
+                  autoCapitalize="none"
+                />
+              </Field>
+              <Field label="Teléfono">
+                <input
+                  value={form.telefono}
+                  onChange={set('telefono')}
+                  placeholder="9999-9999"
+                  className={inputCls}
+                  inputMode="tel"
+                />
+              </Field>
+              <Field label="Fecha de ingreso">
+                <input
+                  type="date"
+                  value={form.fechaIngreso}
+                  onChange={set('fechaIngreso')}
+                  className={inputCls}
+                />
+              </Field>
+            </div>
           </Section>
 
-          {/* Rol */}
           <Section label="Rol en el sistema">
             <Field label="Rol *">
-              <select
-                value={form.rol}
-                onChange={set('rol')}
-                className={inputCls}
-              >
+              <select value={form.rol} onChange={set('rol')} className={inputCls}>
                 <option value={RolUsuario.EMPLEADO}>Técnico</option>
                 <option value={RolUsuario.CONTROL_CALIDAD}>Control de Calidad</option>
               </select>
             </Field>
           </Section>
 
-          {/* Credenciales */}
           <Section label={modo === 'crear' ? 'Credenciales de acceso' : 'Cambiar contraseña (opcional)'}>
             <Field label={modo === 'crear' ? 'Contraseña *' : 'Nueva contraseña'}>
               <div className="relative">
@@ -436,11 +462,12 @@ function ModalMiembro({
                   onChange={set('password')}
                   placeholder={modo === 'crear' ? 'Mínimo 8 caracteres' : 'Dejar en blanco para no cambiar'}
                   className={cn(inputCls, 'pr-10')}
+                  autoComplete={modo === 'crear' ? 'new-password' : 'current-password'}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
                 >
                   {showPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -448,24 +475,26 @@ function ModalMiembro({
             </Field>
           </Section>
 
-          {/* Contacto de emergencia */}
           <Section label="Contacto de emergencia">
-            <Field label="Nombre">
-              <input
-                value={form.contactoEmergenciaNombre}
-                onChange={set('contactoEmergenciaNombre')}
-                placeholder="María Méndez (mamá)"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Teléfono">
-              <input
-                value={form.contactoEmergenciaTelefono}
-                onChange={set('contactoEmergenciaTelefono')}
-                placeholder="9888-7777"
-                className={inputCls}
-              />
-            </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Nombre">
+                <input
+                  value={form.contactoEmergenciaNombre}
+                  onChange={set('contactoEmergenciaNombre')}
+                  placeholder="María Méndez (mamá)"
+                  className={inputCls}
+                />
+              </Field>
+              <Field label="Teléfono">
+                <input
+                  value={form.contactoEmergenciaTelefono}
+                  onChange={set('contactoEmergenciaTelefono')}
+                  placeholder="9888-7777"
+                  className={inputCls}
+                  inputMode="tel"
+                />
+              </Field>
+            </div>
           </Section>
 
           {error && (
@@ -475,15 +504,23 @@ function ModalMiembro({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-surface-2">
-          <Button variant="outline" onClick={onCerrar} disabled={saving}>
+        {/* Footer — fijo en la parte inferior */}
+        <div className="flex gap-3 px-4 sm:px-6 py-4 border-t border-surface-2 shrink-0 bg-surface">
+          <button
+            onClick={onCerrar}
+            disabled={saving}
+            className="flex-1 h-11 rounded-xl border border-surface-2 text-sm text-muted-foreground hover:text-foreground hover:bg-surface-2 transition-colors disabled:opacity-50"
+          >
             Cancelar
-          </Button>
-          <Button variant="primary" onClick={onGuardar} disabled={saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+          </button>
+          <button
+            onClick={onGuardar}
+            disabled={saving}
+            className="flex-1 h-11 rounded-xl bg-secondary hover:bg-secondary/90 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {modo === 'crear' ? 'Crear miembro' : 'Guardar cambios'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
@@ -492,7 +529,7 @@ function ModalMiembro({
 
 // ── Helpers UI ─────────────────────────────────────────────────────────────────
 
-const inputCls = 'w-full h-9 rounded-md bg-surface-2 border border-surface-2 text-sm text-white px-3 outline-none focus:ring-1 focus:ring-secondary placeholder:text-muted-foreground'
+const inputCls = 'w-full h-10 rounded-lg bg-surface-2 border border-surface-2 text-sm text-white px-3 outline-none focus:ring-1 focus:ring-secondary placeholder:text-muted-foreground'
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -503,9 +540,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-1">
+    <div className={cn('space-y-1.5', className)}>
       <label className="text-xs text-muted-foreground">{label}</label>
       {children}
     </div>
