@@ -305,6 +305,7 @@ model DiagnosticoCotizacion {
   diagnosticoTecnico String    @db.Text  // diagnóstico del técnico
   totalMateriales    Decimal   @db.Decimal(12, 2) @default(0)
   totalManoObra      Decimal   @db.Decimal(12, 2) @default(0)
+  aplicarISV         Boolean   @default(false)
   totalGeneral       Decimal   @db.Decimal(12, 2) @default(0)
   tokenAprobacion    String    @unique @default(dbgenerated("gen_random_uuid()::text")) // token para link público cliente
   aprobado           Boolean?  // null=pendiente, true=aprobado, false=rechazado

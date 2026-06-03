@@ -38,9 +38,11 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
       precioUnitario: String(i.precioUnitario),
     })) ?? [emptyItem()],
   )
+  const [aplicarISV, setAplicarISV] = useState(diag?.aplicarISV ?? false)
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
   const [sendingWa, setSendingWa] = useState(false)
+  const [waLink, setWaLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState('')
 
@@ -53,6 +55,9 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
     },
     { materiales: 0, manoObra: 0 },
   )
+  const subtotal = totales.materiales + totales.manoObra
+  const montoISV = aplicarISV ? parseFloat((subtotal * 0.15).toFixed(2)) : 0
+  const totalFinal = subtotal + montoISV
 
   const updateItem = (i: number, field: keyof ItemRow, val: string) =>
     setItems(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
@@ -70,6 +75,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
         body: JSON.stringify({
           sintomaCliente: sintoma,
           diagnosticoTecnico: diagnostico,
+          aplicarISV,
           items: items.map((item, i) => ({
             descripcion: item.descripcion,
             tipo: item.tipo,
@@ -91,8 +97,8 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
 
       })
       if (!res.ok) { const e = await res.json(); setError(e.message); return }
-      const { waLink } = await res.json()
-      window.open(waLink, '_blank')
+      const { waLink: link } = await res.json()
+      setWaLink(link)
       onUpdate()
     } finally { setSendingWa(false) }
   }
@@ -243,9 +249,28 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
             </table>
           </div>
 
-          {/* Totales */}
-          <div className="flex justify-end">
-            <div className="text-sm space-y-1 text-right">
+          {/* Totales + toggle ISV */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            {/* Botón ISV */}
+            {!readonly && (
+              <button
+                type="button"
+                onClick={() => setAplicarISV(v => !v)}
+                className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+                  aplicarISV
+                    ? 'bg-accent/10 border-accent/40 text-accent'
+                    : 'border-surface-2 text-muted-foreground hover:text-foreground hover:border-surface-2'
+                }`}
+              >
+                <span className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center shrink-0 ${aplicarISV ? 'bg-accent border-accent' : 'border-muted-foreground'}`}>
+                  {aplicarISV && <span className="text-[9px] text-black font-bold">✓</span>}
+                </span>
+                Aplicar ISV 15%
+              </button>
+            )}
+
+            {/* Desglose */}
+            <div className="text-sm space-y-1 text-right self-end">
               <div className="flex justify-between gap-8 text-muted-foreground">
                 <span>Materiales</span>
                 <span>{formatCurrency(totales.materiales)}</span>
@@ -254,9 +279,21 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                 <span>Mano de obra</span>
                 <span>{formatCurrency(totales.manoObra)}</span>
               </div>
-              <div className="flex justify-between gap-8 font-bold text-white border-t border-surface-2 pt-1">
+              {aplicarISV && (
+                <>
+                  <div className="flex justify-between gap-8 text-muted-foreground border-t border-surface-2 pt-1">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between gap-8 text-accent/80">
+                    <span>ISV (15%)</span>
+                    <span>+ {formatCurrency(montoISV)}</span>
+                  </div>
+                </>
+              )}
+              <div className={`flex justify-between gap-8 font-bold text-white border-t border-surface-2 pt-1 ${!aplicarISV ? '' : 'mt-0.5'}`}>
                 <span>Total</span>
-                <span className="text-accent">{formatCurrency(totales.materiales + totales.manoObra)}</span>
+                <span className="text-accent">{formatCurrency(totalFinal)}</span>
               </div>
             </div>
           </div>
@@ -282,17 +319,26 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
 
                 <div className="flex flex-wrap gap-2">
                   {/* WhatsApp */}
-                  <Button
-                    variant="outline"
-                    onClick={enviarWhatsapp}
-                    disabled={sendingWa}
-                    className="border-green-600/50 text-green-400 hover:bg-green-600/10"
-                  >
-                    {sendingWa
-                      ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      : <MessageCircle className="h-4 w-4 mr-2" />}
-                    Enviar por WhatsApp
-                  </Button>
+                  {waLink ? (
+                    <a href={waLink} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline" className="border-green-600/50 text-green-400 hover:bg-green-600/10">
+                        <MessageCircle className="h-4 w-4 mr-2" />
+                        Abrir WhatsApp ↗
+                      </Button>
+                    </a>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={enviarWhatsapp}
+                      disabled={sendingWa}
+                      className="border-green-600/50 text-green-400 hover:bg-green-600/10"
+                    >
+                      {sendingWa
+                        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        : <MessageCircle className="h-4 w-4 mr-2" />}
+                      Enviar por WhatsApp
+                    </Button>
+                  )}
 
                   {/* PDF */}
                   <a

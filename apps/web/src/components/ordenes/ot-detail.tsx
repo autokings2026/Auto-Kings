@@ -40,6 +40,7 @@ export interface OrdenDetalle {
     diagnosticoTecnico: string
     totalMateriales: string
     totalManoObra: string
+    aplicarISV: boolean
     totalGeneral: string
     tokenAprobacion: string
     aprobado: boolean | null

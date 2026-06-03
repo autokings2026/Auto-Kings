@@ -15,6 +15,7 @@ const Schema = z.object({
   sintomaCliente:     z.string().min(1),
   diagnosticoTecnico: z.string().min(1),
   items:              z.array(ItemSchema).min(1),
+  aplicarISV:         z.boolean().optional(),
 })
 
 export async function PUT(

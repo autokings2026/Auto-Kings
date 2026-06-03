@@ -47,6 +47,7 @@ export interface SaveDiagnosticoInput {
   sintomaCliente: string
   diagnosticoTecnico: string
   items: ItemInput[]
+  aplicarISV?: boolean
 }
 
 export interface AprobacionInput {
@@ -377,7 +378,9 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
     },
     { materiales: 0, manoObra: 0 },
   )
-  const totalGeneral = totales.materiales + totales.manoObra
+  const subtotal = totales.materiales + totales.manoObra
+  const aplicarISV = dto.aplicarISV ?? false
+  const totalGeneral = aplicarISV ? parseFloat((subtotal * 1.15).toFixed(2)) : subtotal
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.diagnosticoCotizacion.findUnique({ where: { ordenId: id } })
@@ -393,6 +396,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         diagnosticoTecnico: dto.diagnosticoTecnico,
         totalMateriales: totales.materiales,
         totalManoObra: totales.manoObra,
+        aplicarISV,
         totalGeneral,
         aprobado: null,
       },
@@ -401,6 +405,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         diagnosticoTecnico: dto.diagnosticoTecnico,
         totalMateriales: totales.materiales,
         totalManoObra: totales.manoObra,
+        aplicarISV,
         totalGeneral,
         aprobado: null,
         fechaAprobacion: null,

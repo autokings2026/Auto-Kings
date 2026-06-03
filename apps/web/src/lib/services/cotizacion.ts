@@ -36,6 +36,7 @@ export async function findCotizacionByToken(token: string) {
     })),
     totalMateriales: Number(diag.totalMateriales),
     totalManoObra: Number(diag.totalManoObra),
+    aplicarISV: diag.aplicarISV,
     totalGeneral: Number(diag.totalGeneral),
     aprobado: diag.aprobado,
     fechaAprobacion: diag.fechaAprobacion?.toISOString() ?? null,
@@ -121,9 +122,8 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
   }).catch(() => null)
 
   let logoBuffer: Buffer | null = null
-  if (config?.logoUrl) {
-    logoBuffer = await fetchUrl(config.logoUrl).catch(() => null)
-  }
+  const logoSrc = config?.logoUrl ?? `${appUrl}/logo-dark.jpeg`
+  logoBuffer = await fetchUrl(logoSrc).catch(() => null)
 
   const doc = new PDFDocument({ margin: 50, size: 'A4' })
   const filename = `cotizacion-${o.numero}.pdf`
@@ -194,8 +194,14 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
   }
 
   rowY += 6
+  const subtotalPdf = Number(diag.totalMateriales) + Number(diag.totalManoObra)
   totalRow(doc, rowY, 'Materiales',   fmt(Number(diag.totalMateriales))); rowY += 16
   totalRow(doc, rowY, 'Mano de Obra', fmt(Number(diag.totalManoObra)));   rowY += 16
+  if (diag.aplicarISV) {
+    totalRow(doc, rowY, 'Subtotal', fmt(subtotalPdf)); rowY += 16
+    const montoISV = parseFloat((subtotalPdf * 0.15).toFixed(2))
+    totalRow(doc, rowY, 'ISV (15%)', fmt(montoISV)); rowY += 16
+  }
   doc.rect(350, rowY, 195, 20).fill('#0f172a')
   doc.fontSize(9).fillColor('#fff').font('Helvetica-Bold')
      .text('TOTAL GENERAL', 356, rowY + 5)

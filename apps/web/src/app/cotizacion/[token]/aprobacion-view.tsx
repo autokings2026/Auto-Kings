@@ -17,6 +17,7 @@ interface CotizacionData {
   items: { descripcion: string; tipo: string; cantidad: number; precioUnitario: number; subtotal: number }[]
   totalMateriales: number
   totalManoObra: number
+  aplicarISV: boolean
   totalGeneral: number
   aprobado: boolean | null
   fechaAprobacion: string | null
@@ -154,6 +155,18 @@ export function AprobacionView({ token }: { token: string }) {
             <div className="flex justify-between text-sm text-gray-400">
               <span>Mano de obra</span><span>{fmt(data.totalManoObra)}</span>
             </div>
+            {data.aplicarISV && (
+              <>
+                <div className="flex justify-between text-sm text-gray-400 border-t border-gray-800 pt-1.5">
+                  <span>Subtotal</span>
+                  <span>{fmt(data.totalMateriales + data.totalManoObra)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-amber-400/80">
+                  <span>ISV (15%)</span>
+                  <span>+ {fmt(parseFloat(((data.totalMateriales + data.totalManoObra) * 0.15).toFixed(2)))}</span>
+                </div>
+              </>
+            )}
             <div className="flex justify-between text-base font-bold text-white pt-1 border-t border-gray-800">
               <span>Total estimado</span><span className="text-amber-400">{fmt(data.totalGeneral)}</span>
             </div>
