@@ -93,7 +93,7 @@ export async function createCita(dto: {
       marca: marca.nombre,
       modelo: modelo.nombre,
       anio: cita.anio,
-      placa: cita.placa,
+      placa: cita.placa ?? '',
       telefonoTaller: config?.telefono ?? '',
     })
     await prisma.cita.update({ where: { id: cita.id }, data: { emailEnviado: true } }).catch(() => null)
@@ -215,7 +215,7 @@ export async function enviarRecordatorios() {
       marca: cita.marca.nombre,
       modelo: cita.modelo.nombre,
       anio: cita.anio,
-      placa: cita.placa,
+      placa: cita.placa ?? '',
       telefonoTaller: config?.telefono ?? '',
     })
     await prisma.cita.update({ where: { id: cita.id }, data: { recordatorioEnviado: true } })

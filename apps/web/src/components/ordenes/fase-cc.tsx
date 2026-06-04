@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn, formatDate } from '@/lib/utils'
 import { FaseOT, RolUsuario } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
+import { ReparacionFotoUpload } from './reparacion-foto-upload'
 
 
 export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
@@ -44,6 +45,19 @@ export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () 
         <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
           Fase 4 · Control de Calidad
         </h2>
+
+        {/* Fotos de reparación para revisión */}
+        <div className="space-y-1.5">
+          <Label className="text-muted-foreground text-xs uppercase">
+            Fotos del trabajo realizado ({orden.fotosReparacion.length})
+          </Label>
+          <ReparacionFotoUpload
+            ordenId={orden.id}
+            fotos={orden.fotosReparacion}
+            onUpdate={() => {}}
+            readonly
+          />
+        </div>
 
         {/* Historial de controles anteriores */}
         {orden.controlesCC.length > 0 && (

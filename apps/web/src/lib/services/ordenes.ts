@@ -114,7 +114,7 @@ export async function createOrden(dto: CreateOrdenInput, userId: string) {
     marcaId   = cita!.marcaId
     modeloId  = cita!.modeloId
     anio      = cita!.anio
-    placa     = cita!.placa
+    placa     = cita!.placa ?? ''
     citaId    = cita!.id
   } else {
     if (!dto.clienteId || !dto.marcaId || !dto.modeloId || !dto.anio || !dto.placa) {
@@ -247,6 +247,7 @@ export async function findOneOrden(id: string) {
         orderBy: { createdAt: 'asc' },
         include: { tipoFoto: { select: { id: true, nombre: true } } },
       },
+      fotosReparacion: { orderBy: { createdAt: 'asc' } },
       diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
       reparacion: { include: { tecnico: { select: { id: true, nombre: true } } } },
       controlesCC: {

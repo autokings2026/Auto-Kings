@@ -34,6 +34,7 @@ export interface OrdenDetalle {
   modelo: { nombre: string }
   cita: { id: string; fecha: string; hora: string } | null
   fotos: { id: string; url: string; publicId: string; createdAt: string; tipoFoto?: { id: string; nombre: string } | null }[]
+  fotosReparacion: { id: string; url: string; publicId: string; createdAt: string }[]
   diagnostico: {
     id: string
     sintomaCliente: string

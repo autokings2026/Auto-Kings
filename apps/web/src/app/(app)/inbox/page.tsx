@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  MessageSquare, Send, Loader2, ChevronRight,
+  MessageSquare, Send, Loader2, ChevronRight, ChevronLeft,
   AlertTriangle, Phone, RefreshCw, PlusCircle, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -165,7 +165,7 @@ export default function InboxPage() {
   const totalNoLeidos = conversaciones.reduce((acc, c) => acc + c.noLeidos, 0)
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col">
+    <div className="h-[calc(100dvh-6rem)] md:h-[calc(100vh-5rem)] flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 shrink-0">
         <div className="flex items-center gap-3">
@@ -193,7 +193,11 @@ export default function InboxPage() {
       <div className="flex-1 flex gap-4 min-h-0">
 
         {/* ── Lista conversaciones ── */}
-        <div className="w-80 shrink-0 flex flex-col bg-surface border border-surface-2 rounded-xl overflow-hidden">
+        <div className={cn(
+          'shrink-0 flex-col bg-surface border border-surface-2 rounded-xl overflow-hidden',
+          'w-full md:w-80',
+          selectedId ? 'hidden md:flex' : 'flex',
+        )}>
           <div className="px-3 py-2.5 border-b border-surface-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
             Conversaciones
           </div>
@@ -266,7 +270,10 @@ export default function InboxPage() {
         </div>
 
         {/* ── Hilo de mensajes ── */}
-        <div className="flex-1 flex flex-col bg-surface border border-surface-2 rounded-xl overflow-hidden min-w-0">
+        <div className={cn(
+          'flex-col bg-surface border border-surface-2 rounded-xl overflow-hidden min-w-0 flex-1',
+          !selectedId ? 'hidden md:flex' : 'flex',
+        )}>
           {!selectedId ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground space-y-2">
               <MessageSquare className="h-10 w-10" />
@@ -280,7 +287,13 @@ export default function InboxPage() {
             <>
               {/* Header del hilo */}
               <div className="px-4 py-3 border-b border-surface-2 flex items-center gap-3 shrink-0">
-                <div className="h-8 w-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-sm font-bold text-green-400">
+                <button
+                  onClick={() => setSelectedId(null)}
+                  className="md:hidden p-1 -ml-1 rounded-lg text-muted-foreground hover:bg-surface-2 hover:text-white shrink-0"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <div className="h-8 w-8 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-sm font-bold text-green-400 shrink-0">
                   {hilo.cliente.nombre.charAt(0).toUpperCase()}
                 </div>
                 <div>

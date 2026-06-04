@@ -160,9 +160,9 @@ export function OrdenesTable() {
                   <th className="px-4 py-3 text-left">OT</th>
                   <th className="px-4 py-3 text-left">Cliente · Vehículo</th>
                   <th className="px-4 py-3 text-left">Fase</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Técnico</th>
-                  <th className="px-4 py-3 text-left">Fecha</th>
+                  <th className="px-4 py-3 text-left hidden sm:table-cell">Estado</th>
+                  <th className="px-4 py-3 text-left hidden lg:table-cell">Técnico</th>
+                  <th className="px-4 py-3 text-left hidden md:table-cell">Fecha</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-2">
@@ -189,13 +189,13 @@ export function OrdenesTable() {
                         {LABEL_FASE[o.faseActual]}
                       </span>
                     </td>
-                    <td className={cn('px-4 py-3 text-xs', ESTADO_STYLE[o.estado])}>
+                    <td className={cn('px-4 py-3 text-xs hidden sm:table-cell', ESTADO_STYLE[o.estado])}>
                       {ESTADO_LABEL[o.estado]}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs">
+                    <td className="px-4 py-3 text-muted-foreground text-xs hidden lg:table-cell">
                       {o.tecnicoNombre}
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap hidden md:table-cell">
                       {formatDate(o.createdAt)}
                     </td>
                   </tr>

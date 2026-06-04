@@ -2,13 +2,26 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2 } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn, formatDate } from '@/lib/utils'
 import { EstadoCita } from '@kings/shared'
 import { ConvertOtModal } from './convert-ot-modal'
+
+const FALLBACK_WA =
+  'Hola {{nombre_cliente}}, le notificamos que hemos recibido su vehículo {{marca}} {{modelo}} (placa {{placa}}) en nuestras instalaciones. Nuestro equipo ya está trabajando en el diagnóstico y le estaremos informando sobre el estado de su vehículo. Gracias por confiar en Kings Auto Diagnósticos. 🔧'
+
+function buildWAMessage(template: string, cita: Cita): string {
+  return template
+    .replace(/\{\{nombre_cliente\}\}/g, cita.clienteNombre)
+    .replace(/\{\{marca\}\}/g, cita.marcaNombre)
+    .replace(/\{\{modelo\}\}/g, cita.modeloNombre)
+    .replace(/\{\{placa\}\}/g, cita.placa)
+    .replace(/\{\{fecha_cita\}\}/g, formatDate(cita.fecha))
+    .replace(/\{\{hora_cita\}\}/g, cita.hora)
+}
 
 
 type Rango = 'hoy' | 'semana' | 'mes' | 'todas'
@@ -77,6 +90,19 @@ export function CitasTable() {
   const [page, setPage] = useState(1)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [convertModal, setConvertModal] = useState<{ citaId: string; clienteNombre: string; vehiculo: string } | null>(null)
+  const [waTemplate, setWaTemplate] = useState<string>(FALLBACK_WA)
+
+  // Cargar plantilla WA de recepción
+  useEffect(() => {
+    if (!session?.user) return
+    fetch('/api/inbox/plantillas')
+      .then(r => r.ok ? r.json() : [])
+      .then((list: { tipo: string; contenido: string; activa: boolean }[]) => {
+        const p = list.find(t => t.tipo === 'CONFIRMAR_CITA' && t.activa)
+        if (p) setWaTemplate(p.contenido)
+      })
+      .catch(() => null)
+  }, [session])
 
   // Debounce search
   useEffect(() => {
@@ -113,14 +139,15 @@ export function CitasTable() {
     if (!session?.user) return
     setUpdatingId(id)
     try {
-      await fetch(`/api/citas/${id}/estado`, {
+      const res = await fetch(`/api/citas/${id}/estado`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado: nuevoEstado }),
       })
+      if (!res.ok) return
+      // Si el filtro activo filtraría a la cita recién actualizada, limpiar el filtro
+      // para que el usuario vea la cita con sus nuevos botones (ej: botón WA tras confirmar)
+      if (estado && estado !== nuevoEstado) setEstado('')
       await fetchCitas()
     } finally {
       setUpdatingId(null)
@@ -195,9 +222,9 @@ export function CitasTable() {
               <thead>
                 <tr className="border-b border-surface-2 text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="px-4 py-3 text-left">Cliente</th>
-                  <th className="px-4 py-3 text-left">Vehículo</th>
+                  <th className="px-4 py-3 text-left hidden sm:table-cell">Vehículo</th>
                   <th className="px-4 py-3 text-left">Fecha / Hora</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
+                  <th className="px-4 py-3 text-left hidden sm:table-cell">Estado</th>
                   <th className="px-4 py-3 text-left">Acciones</th>
                 </tr>
               </thead>
@@ -208,7 +235,7 @@ export function CitasTable() {
                       <div className="font-medium text-white">{cita.clienteNombre}</div>
                       <div className="text-muted-foreground text-xs">{cita.clienteTelefono}</div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="text-white">{cita.marcaNombre} {cita.modeloNombre}</div>
                       <div className="text-muted-foreground text-xs">{cita.anio} · {cita.placa}</div>
                     </td>
@@ -216,7 +243,7 @@ export function CitasTable() {
                       <div className="text-white">{formatDate(cita.fecha)}</div>
                       <div className="text-muted-foreground text-xs">{cita.hora}</div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden sm:table-cell">
                       <EstadoBadge estado={cita.estado} />
                       {cita.ordenTrabajo && (
                         <div className="text-xs text-accent mt-1">OT #{cita.ordenTrabajo.numero}</div>
@@ -235,6 +262,16 @@ export function CitasTable() {
                               >
                                 Confirmar
                               </button>
+                            )}
+                            {cita.estado === EstadoCita.CONFIRMADA && (
+                              <a
+                                href={`https://wa.me/${cita.clienteTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(buildWAMessage(waTemplate, cita))}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 underline"
+                              >
+                                <MessageCircle className="h-3 w-3" /> WA
+                              </a>
                             )}
                             {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && !cita.ordenTrabajo && (
                               <button

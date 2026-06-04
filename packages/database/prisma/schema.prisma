@@ -124,13 +124,14 @@ model User {
   updatedAt                  DateTime   @updatedAt
 
   // Relaciones
-  ordenesAsignadas OrdenTrabajo[]  @relation("TecnicoOrdenes")
-  fotosSubidas     FotoIngreso[]   @relation("FotoCreadaPor")
-  reparaciones     Reparacion[]    @relation("ReparacionTecnico")
-  controlesCalidad ControlCalidad[]
-  entregas         Entrega[]
-  mensajesEnviados MensajeWhatsApp[]
-  eventosGenerados EventoOT[]
+  ordenesAsignadas        OrdenTrabajo[]    @relation("TecnicoOrdenes")
+  fotosSubidas            FotoIngreso[]     @relation("FotoCreadaPor")
+  fotosReparacionSubidas  FotoReparacion[]  @relation("FotoReparacionCreadaPor")
+  reparaciones            Reparacion[]      @relation("ReparacionTecnico")
+  controlesCalidad        ControlCalidad[]
+  entregas                Entrega[]
+  mensajesEnviados        MensajeWhatsApp[]
+  eventosGenerados        EventoOT[]
 
   @@map("users")
 }
@@ -248,6 +249,7 @@ model OrdenTrabajo {
   marca           Marca                  @relation(fields: [marcaId], references: [id], onDelete: Restrict)
   modelo          Modelo                 @relation(fields: [modeloId], references: [id], onDelete: Restrict)
   fotos           FotoIngreso[]
+  fotosReparacion FotoReparacion[]
   diagnostico     DiagnosticoCotizacion?
   reparacion      Reparacion?
   controlesCC     ControlCalidad[]       // puede haber varios (si hay rechazos y reintento)
@@ -292,6 +294,22 @@ model FotoIngreso {
 
   @@index([ordenId])
   @@map("fotos_ingreso")
+}
+
+model FotoReparacion {
+  id          String   @id @default(cuid())
+  ordenId     String
+  url         String
+  publicId    String
+  creadoPorId String
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  orden     OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  creadoPor User         @relation("FotoReparacionCreadaPor", fields: [creadoPorId], references: [id], onDelete: Restrict)
+
+  @@index([ordenId])
+  @@map("fotos_reparacion")
 }
 
 // ─────────────────────────────────────────

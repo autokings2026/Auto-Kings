@@ -24,7 +24,7 @@ export default async function DashboardPage() {
 
   const cards = [
     {
-      label: 'Citas hoy',
+      label: 'Citas esta semana',
       value: stats?.citasHoy ?? '—',
       icon: CalendarDays,
       color: 'text-secondary',

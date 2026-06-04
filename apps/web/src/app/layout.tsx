@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { auth } from '@/auth'
 import { AuthSessionProvider } from '@/components/providers/session-provider'
@@ -12,6 +12,19 @@ export const metadata: Metadata = {
     template: '%s — Kings Auto Diagnósticos',
   },
   description: 'Sistema de gestión del taller mecánico Kings Auto Diagnósticos',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kings Auto',
+  },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: '#0d0d0d',
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

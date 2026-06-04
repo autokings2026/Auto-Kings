@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
+import { ReparacionFotoUpload, type FotoRep } from './reparacion-foto-upload'
 
 
 export function FaseReparacion({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
@@ -17,6 +18,7 @@ export function FaseReparacion({ orden, onUpdate }: { orden: OrdenDetalle; onUpd
   const yaFinalizada = !!rep?.finalizadaEn
 
   const [notas, setNotas] = useState(rep?.notas ?? '')
+  const [fotosRep, setFotosRep] = useState<FotoRep[]>(orden.fotosReparacion)
   const [saving, setSaving] = useState(false)
   const [finalizing, setFinalizing] = useState(false)
 
@@ -64,6 +66,17 @@ export function FaseReparacion({ orden, onUpdate }: { orden: OrdenDetalle; onUpd
             <p className="text-white">{orden.diagnostico.diagnosticoTecnico}</p>
           </div>
         )}
+
+        {/* Fotos de reparación */}
+        <div className="space-y-1.5">
+          <Label className="text-muted-foreground">Fotos de la reparación</Label>
+          <ReparacionFotoUpload
+            ordenId={orden.id}
+            fotos={fotosRep}
+            onUpdate={setFotosRep}
+            readonly={!isActive || yaFinalizada}
+          />
+        </div>
 
         {/* Notas de reparación */}
         <div className="space-y-1.5">

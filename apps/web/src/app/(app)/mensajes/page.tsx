@@ -38,10 +38,10 @@ const STEPS: {
 }[] = [
   {
     tipo: 'CONFIRMAR_CITA',
-    label: 'Confirmación de Cita',
-    descripcion: 'Se envía al cliente al agendar o confirmar una cita en el taller.',
+    label: 'Recepción del vehículo',
+    descripcion: 'Se envía por WhatsApp cuando el vehículo ingresa al taller y el equipo comienza a trabajar.',
     icon: CalendarDays,
-    variables: ['nombre_cliente', 'fecha_cita', 'hora_cita', 'marca', 'modelo', 'placa'],
+    variables: ['nombre_cliente', 'marca', 'modelo', 'placa'],
     accentClass: 'border-blue-500/30 bg-blue-500/5',
     dotClass: 'bg-blue-500',
     stepNum: 1,
@@ -91,7 +91,7 @@ const STEPS: {
 // Contenido por defecto si la plantilla aún no existe en la BD
 const DEFAULT_CONTENT: Record<TipoPlantilla, string> = {
   CONFIRMAR_CITA:
-    'Hola {{nombre_cliente}}, le confirmamos su cita el {{fecha_cita}} a las {{hora_cita}} para su {{marca}} {{modelo}} (placa {{placa}}). ¡Lo esperamos en el taller!',
+    'Hola {{nombre_cliente}}, le notificamos que hemos recibido su vehículo {{marca}} {{modelo}} (placa {{placa}}) en nuestras instalaciones. Nuestro equipo ya está trabajando en el diagnóstico y le estaremos informando sobre el estado de su vehículo. Gracias por confiar en Kings Auto Diagnósticos. 🔧',
   COTIZACION_LISTA:
     'Hola {{nombre_cliente}}, hemos terminado el diagnóstico de su {{marca}} {{modelo}} ({{placa}}). El costo estimado es de {{total_cotizacion}}. Revise y apruebe su cotización aquí: {{link_cotizacion}}',
   DIAGNOSTICO_LISTO:
