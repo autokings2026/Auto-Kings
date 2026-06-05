@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, ArrowLeft, FileDown, CheckCircle, XCircle,
-  Camera, Wrench, ShieldCheck, Package, Star,
+  Camera, Wrench, ShieldCheck, Package, Star, TrendingUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
@@ -25,6 +25,8 @@ interface Reporte {
   marca: string
   modelo: string
   tecnico: string
+  comisionPct: number
+  comisionTecnico: number | null
   cliente: { nombre: string; telefono: string; email: string | null }
   fotos: { id: string; url: string; createdAt: string }[]
   diagnostico: {
@@ -242,6 +244,16 @@ export default function ReporteDetallePage({ params }: { params: { id: string } 
                   <td colSpan={4} className="px-3 py-2 text-right text-sm font-bold text-white">Total general</td>
                   <td className="px-3 py-2 text-right text-base font-bold text-accent">{formatCurrency(reporte.diagnostico.totalGeneral)}</td>
                 </tr>
+                {reporte.comisionTecnico !== null && (
+                  <tr className="border-t border-emerald-500/20 bg-emerald-500/5">
+                    <td colSpan={4} className="px-3 py-2 text-right text-xs text-emerald-400 font-medium">
+                      Comisión técnico ({reporte.comisionPct}% mano de obra)
+                    </td>
+                    <td className="px-3 py-2 text-right text-sm font-bold text-emerald-400">
+                      {formatCurrency(reporte.comisionTecnico)}
+                    </td>
+                  </tr>
+                )}
               </tfoot>
             </table>
           </div>

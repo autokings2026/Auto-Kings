@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     default: 'Kings Auto Diagnósticos',
     template: '%s — Kings Auto Diagnósticos',
   },
-  description: 'Sistema de gestión del taller mecánico Kings Auto Diagnósticos',
+  description: 'Sistema de gestión del centro de servicio Kings Auto Diagnósticos',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',

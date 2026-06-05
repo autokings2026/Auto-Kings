@@ -701,7 +701,7 @@ export async function getWhatsappCotizacion(id: string) {
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
 
-export async function getDashboardStats() {
+export async function getDashboardStats(opts?: { userId?: string; rol?: string }) {
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
   const manana = new Date(hoy)
@@ -712,7 +712,10 @@ export async function getDashboardStats() {
   const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - diasDesdeLunes)
   const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 7)
 
-  const [totalActivas, enEsperaAprobacion, completadasHoy, citasSemana, porFase] = await Promise.all([
+  // Inicio del mes actual
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
+
+  const [totalActivas, enEsperaAprobacion, completadasHoy, citasSemana, porFase, config] = await Promise.all([
     prisma.ordenTrabajo.count({ where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.EN_ESPERA_APROBACION } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.COMPLETADA, updatedAt: { gte: hoy, lt: manana } } }),
@@ -722,7 +725,37 @@ export async function getDashboardStats() {
       where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } },
       _count: true,
     }),
+    prisma.configuracionTaller.findFirst({ select: { comisionTecnicoPct: true } }),
   ])
+
+  const comisionPct = config?.comisionTecnicoPct ?? 8
+
+  // Comisión del mes (calculada sobre mano de obra de OTs completadas este mes)
+  let comisionMes: number | null = null
+  if (opts?.userId && opts.rol === RolUsuario.EMPLEADO) {
+    const agg = await prisma.diagnosticoCotizacion.aggregate({
+      where: {
+        orden: {
+          estado: EstadoOT.COMPLETADA,
+          tecnicoId: opts.userId,
+          updatedAt: { gte: inicioMes },
+        },
+      },
+      _sum: { totalManoObra: true },
+    })
+    comisionMes = +(Number(agg._sum.totalManoObra ?? 0) * comisionPct / 100).toFixed(2)
+  } else if (opts?.rol === RolUsuario.ADMIN) {
+    const agg = await prisma.diagnosticoCotizacion.aggregate({
+      where: {
+        orden: {
+          estado: EstadoOT.COMPLETADA,
+          updatedAt: { gte: inicioMes },
+        },
+      },
+      _sum: { totalManoObra: true },
+    })
+    comisionMes = +(Number(agg._sum.totalManoObra ?? 0) * comisionPct / 100).toFixed(2)
+  }
 
   return {
     totalActivas,
@@ -730,6 +763,8 @@ export async function getDashboardStats() {
     completadasHoy,
     citasHoy: citasSemana,
     porFase: Object.fromEntries(porFase.map((f) => [f.faseActual, f._count])),
+    comisionMes,
+    comisionPct,
   }
 }
 

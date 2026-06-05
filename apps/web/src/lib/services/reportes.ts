@@ -21,7 +21,7 @@ export async function getOrdenesCompletadas(params: {
     ...(tecnicoId ? { tecnicoId } : {}),
   }
 
-  const [total, ordenes] = await Promise.all([
+  const [total, ordenes, config] = await Promise.all([
     prisma.ordenTrabajo.count({ where }),
     prisma.ordenTrabajo.findMany({
       where,
@@ -35,59 +35,74 @@ export async function getOrdenesCompletadas(params: {
         marca:      { select: { nombre: true } },
         modelo:     { select: { nombre: true } },
         tecnico:    { select: { id: true, nombre: true } },
-        diagnostico: { select: { totalGeneral: true, aprobado: true } },
+        diagnostico: { select: { totalGeneral: true, totalManoObra: true, aprobado: true } },
         entrega:    { select: { entregadoEn: true } },
         encuesta:   { select: { calidad: true, tiempo: true, atencion: true, respondidoEn: true } },
         _count:     { select: { fotos: true } },
       },
     }),
+    prisma.configuracionTaller.findFirst({ select: { comisionTecnicoPct: true } }),
   ])
 
+  const comisionPct = config?.comisionTecnicoPct ?? 8
+
   return {
-    data: ordenes.map(o => ({
-      id: o.id,
-      numero: o.numero,
-      placa: o.placa,
-      anio: o.anio,
-      color: o.color,
-      clienteNombre: o.cliente.nombre,
-      clienteTelefono: o.cliente.telefono,
-      vehiculo: `${o.marca.nombre} ${o.modelo.nombre} ${o.anio}`,
-      tecnicoNombre: o.tecnico.nombre,
-      tecnicoId: o.tecnico.id,
-      totalFacturado: o.diagnostico?.totalGeneral ? Number(o.diagnostico.totalGeneral) : null,
-      fechaIngreso: o.createdAt.toISOString(),
-      fechaEntrega: o.entrega?.entregadoEn?.toISOString() ?? null,
-      tieneFotos: o._count.fotos > 0,
-      encuestaPromedio: o.encuesta?.calidad && o.encuesta?.tiempo && o.encuesta?.atencion
-        ? +((o.encuesta.calidad + o.encuesta.tiempo + o.encuesta.atencion) / 3).toFixed(1)
-        : null,
-    })),
+    data: ordenes.map(o => {
+      const manoObra = o.diagnostico?.totalManoObra ? Number(o.diagnostico.totalManoObra) : null
+      return {
+        id: o.id,
+        numero: o.numero,
+        placa: o.placa,
+        anio: o.anio,
+        color: o.color,
+        clienteNombre: o.cliente.nombre,
+        clienteTelefono: o.cliente.telefono,
+        vehiculo: `${o.marca.nombre} ${o.modelo.nombre} ${o.anio}`,
+        tecnicoNombre: o.tecnico.nombre,
+        tecnicoId: o.tecnico.id,
+        totalFacturado: o.diagnostico?.totalGeneral ? Number(o.diagnostico.totalGeneral) : null,
+        totalManoObra: manoObra,
+        comisionTecnico: manoObra !== null ? +(manoObra * comisionPct / 100).toFixed(2) : null,
+        comisionPct,
+        fechaIngreso: o.createdAt.toISOString(),
+        fechaEntrega: o.entrega?.entregadoEn?.toISOString() ?? null,
+        tieneFotos: o._count.fotos > 0,
+        encuestaPromedio: o.encuesta?.calidad && o.encuesta?.tiempo && o.encuesta?.atencion
+          ? +((o.encuesta.calidad + o.encuesta.tiempo + o.encuesta.atencion) / 3).toFixed(1)
+          : null,
+      }
+    }),
     total, page, pageSize,
     totalPages: Math.ceil(total / pageSize),
+    comisionPct,
   }
 }
 
 // ── Detalle de una OT ─────────────────────────────────────────────────────────
 
 export async function getDetalleReporte(id: string) {
-  const o = await prisma.ordenTrabajo.findUnique({
-    where: { id },
-    include: {
-      cliente: true, marca: true, modelo: true,
-      tecnico:  { select: { nombre: true, email: true } },
-      fotos:    { orderBy: { createdAt: 'asc' } },
-      diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
-      reparacion:  { include: { tecnico: { select: { nombre: true } } } },
-      controlesCC: { orderBy: { revisadoEn: 'asc' }, include: { revisadoPor: { select: { nombre: true } } } },
-      entrega:  { include: { registradoPor: { select: { nombre: true } } } },
-      encuesta: true,
-      eventos:  { orderBy: { createdAt: 'asc' }, include: { realizadoPor: { select: { nombre: true } } } },
-    },
-  })
+  const [o, config] = await Promise.all([
+    prisma.ordenTrabajo.findUnique({
+      where: { id },
+      include: {
+        cliente: true, marca: true, modelo: true,
+        tecnico:  { select: { nombre: true, email: true } },
+        fotos:    { orderBy: { createdAt: 'asc' } },
+        diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
+        reparacion:  { include: { tecnico: { select: { nombre: true } } } },
+        controlesCC: { orderBy: { revisadoEn: 'asc' }, include: { revisadoPor: { select: { nombre: true } } } },
+        entrega:  { include: { registradoPor: { select: { nombre: true } } } },
+        encuesta: true,
+        eventos:  { orderBy: { createdAt: 'asc' }, include: { realizadoPor: { select: { nombre: true } } } },
+      },
+    }),
+    prisma.configuracionTaller.findFirst({ select: { comisionTecnicoPct: true } }),
+  ])
   if (!o) return null
 
+  const comisionPct = config?.comisionTecnicoPct ?? 8
   const diag = o.diagnostico
+  const manoObra = diag ? Number(diag.totalManoObra) : null
   return {
     id: o.id, numero: o.numero, placa: o.placa, anio: o.anio, color: o.color,
     combustible: o.combustible, kilometraje: o.kilometraje,
@@ -96,6 +111,8 @@ export async function getDetalleReporte(id: string) {
     vehiculo: `${o.marca.nombre} ${o.modelo.nombre} ${o.anio}`,
     marca: o.marca.nombre, modelo: o.modelo.nombre, tecnico: o.tecnico.nombre,
     fotos: o.fotos.map(f => ({ id: f.id, url: f.url, createdAt: f.createdAt.toISOString() })),
+    comisionPct,
+    comisionTecnico: manoObra !== null ? +(manoObra * comisionPct / 100).toFixed(2) : null,
     diagnostico: diag ? {
       sintomaCliente: diag.sintomaCliente,
       diagnosticoTecnico: diag.diagnosticoTecnico,

@@ -514,6 +514,9 @@ model ConfiguracionTaller {
   alertaAmarillaMinutos Int @default(60)  // aviso amarillo a los N minutos
   alertaRojaMinutos     Int @default(120) // aviso rojo a los N minutos
 
+  // Comisión para técnicos (% sobre mano de obra por OT reparada)
+  comisionTecnicoPct Float @default(8)
+
   updatedAt DateTime @updatedAt
 
   @@map("configuracion_taller")

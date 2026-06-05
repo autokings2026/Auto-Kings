@@ -16,6 +16,7 @@ const UpdateConfigSchema = z.object({
   maxCitasPorSlot:       z.number().min(1).optional(),
   alertaAmarillaMinutos: z.number().min(1).optional(),
   alertaRojaMinutos:     z.number().min(1).optional(),
+  comisionTecnicoPct:    z.number().min(0).max(100).optional(),
 })
 
 export async function GET() {

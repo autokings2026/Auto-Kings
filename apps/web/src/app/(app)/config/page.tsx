@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Loader2, Settings, Save, Check, Upload, X, Building2,
-  Clock, Calendar, Bell, Image as ImageIcon,
+  Clock, Calendar, Bell, Image as ImageIcon, Percent,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -28,6 +28,7 @@ interface Config {
   maxCitasPorSlot: number
   alertaAmarillaMinutos: number
   alertaRojaMinutos: number
+  comisionTecnicoPct: number
 }
 
 const DEFAULT_HORARIOS: Horario[] = DIAS.map((_, i) => ({
@@ -84,6 +85,7 @@ export default function ConfigPage() {
   const [maxCitas, setMaxCitas] = useState(3)
   const [alertaAmarilla, setAlertaAmarilla] = useState(60)
   const [alertaRoja, setAlertaRoja] = useState(120)
+  const [comisionPct, setComisionPct] = useState(8)
 
   const headers = useCallback(
     () => ({ 'Content-Type': 'application/json' }),
@@ -109,6 +111,7 @@ export default function ConfigPage() {
         setMaxCitas(data.maxCitasPorSlot ?? 3)
         setAlertaAmarilla(data.alertaAmarillaMinutos ?? 60)
         setAlertaRoja(data.alertaRojaMinutos ?? 120)
+        setComisionPct(data.comisionTecnicoPct ?? 8)
       })
       .finally(() => setLoading(false))
   }, [session, headers])
@@ -148,6 +151,7 @@ export default function ConfigPage() {
           maxCitasPorSlot: maxCitas,
           alertaAmarillaMinutos: alertaAmarilla,
           alertaRojaMinutos: alertaRoja,
+          comisionTecnicoPct: comisionPct,
         }),
       })
       if (res.ok) {
@@ -180,7 +184,7 @@ export default function ConfigPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Configuración</h1>
-            <p className="text-sm text-muted-foreground">Ajustes generales del taller</p>
+            <p className="text-sm text-muted-foreground">Ajustes generales del centro de servicio</p>
           </div>
         </div>
         <Button onClick={handleSave} disabled={saving} className={cn('gap-2', saved && 'bg-green-600 hover:bg-green-600')}>
@@ -195,10 +199,10 @@ export default function ConfigPage() {
         {/* ── Columna izquierda ── */}
         <div className="space-y-6">
 
-          {/* Información del taller */}
-          <SectionCard icon={<Building2 className="h-4 w-4" />} title="Información del taller">
+          {/* Información del centro de servicio */}
+          <SectionCard icon={<Building2 className="h-4 w-4" />} title="Información del centro de servicio">
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Nombre del taller">
+              <Field label="Nombre del centro de servicio">
                 <input className={inputCls} value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Kings Auto Diagnósticos" />
               </Field>
               <Field label="Teléfono">
@@ -255,7 +259,7 @@ export default function ConfigPage() {
         <div className="space-y-6">
 
           {/* Logo */}
-          <SectionCard icon={<ImageIcon className="h-4 w-4" />} title="Logo del taller">
+          <SectionCard icon={<ImageIcon className="h-4 w-4" />} title="Logo del centro de servicio">
             <div className="flex flex-col items-center gap-4 py-2">
               <div className="h-28 w-28 rounded-2xl border border-surface-2 bg-surface-2 flex items-center justify-center overflow-hidden">
                 {logoUrl ? (
@@ -342,6 +346,33 @@ export default function ConfigPage() {
                   <span className="h-3 w-3 rounded-full bg-red-500 flex-shrink-0" />
                   <span className="text-xs text-muted-foreground">min</span>
                 </div>
+              </Field>
+            </div>
+          </SectionCard>
+
+          {/* Comisión técnicos */}
+          <SectionCard icon={<Percent className="h-4 w-4" />} title="Comisión para técnicos">
+            <p className="text-xs text-muted-foreground -mt-1">
+              Porcentaje que recibe el técnico sobre el total de mano de obra por cada vehículo reparado.
+            </p>
+            <div className="mt-2">
+              <Field label="Porcentaje de comisión">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.5}
+                    value={comisionPct}
+                    onChange={e => setComisionPct(Number(e.target.value))}
+                    className="w-24 rounded-lg border border-surface-2 bg-surface-2 px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-secondary"
+                  />
+                  <Percent className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">sobre mano de obra</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Actualmente: {comisionPct}% — aplica a todas las OTs completadas desde este momento.
+                </p>
               </Field>
             </div>
           </SectionCard>

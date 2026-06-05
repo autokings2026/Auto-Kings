@@ -10,7 +10,7 @@ export default function OrdenesPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Órdenes de Trabajo</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Seguimiento de vehículos en taller por fase.
+          Seguimiento de vehículos en el centro de servicio por fase.
         </p>
       </div>
       <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-secondary" /></div>}>

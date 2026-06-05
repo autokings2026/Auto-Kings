@@ -47,7 +47,7 @@ export function FaseEntrega({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate
   }
 
   const waText = encodeURIComponent(
-    `Hola ${orden.cliente.nombre}, su vehículo ${orden.marca.nombre} ${orden.modelo.nombre} (${orden.placa}) ya está listo para ser retirado en nuestro taller. ¡Lo esperamos! 🚗 — Kings Auto Diagnósticos`,
+    `Hola ${orden.cliente.nombre}, su vehículo ${orden.marca.nombre} ${orden.modelo.nombre} (${orden.placa}) ya está listo para ser retirado en nuestro centro de servicio. ¡Lo esperamos! 🚗 — Kings Auto Diagnósticos`,
   )
   const waLink = `https://wa.me/${orden.cliente.telefono.replace(/\D/g, '')}?text=${waText}`
 

@@ -39,7 +39,7 @@ const STEPS: {
   {
     tipo: 'CONFIRMAR_CITA',
     label: 'Recepción del vehículo',
-    descripcion: 'Se envía por WhatsApp cuando el vehículo ingresa al taller y el equipo comienza a trabajar.',
+    descripcion: 'Se envía por WhatsApp cuando el vehículo ingresa al centro de servicio y el equipo comienza a trabajar.',
     icon: CalendarDays,
     variables: ['nombre_cliente', 'marca', 'modelo', 'placa'],
     accentClass: 'border-blue-500/30 bg-blue-500/5',
@@ -97,7 +97,7 @@ const DEFAULT_CONTENT: Record<TipoPlantilla, string> = {
   DIAGNOSTICO_LISTO:
     'Hola {{nombre_cliente}}, el diagnóstico de su {{marca}} {{modelo}} ({{placa}}) ya está listo. Nos comunicaremos para informarle los detalles.',
   VEHICULO_LISTO:
-    'Hola {{nombre_cliente}}, su vehículo {{marca}} {{modelo}} ({{placa}}) ya está listo para ser retirado en nuestro taller. ¡Lo esperamos!',
+    'Hola {{nombre_cliente}}, su vehículo {{marca}} {{modelo}} ({{placa}}) ya está listo para ser retirado en nuestro centro de servicio. ¡Lo esperamos!',
   ENCUESTA_SATISFACCION:
     'Hola {{nombre_cliente}}, gracias por confiar en nosotros con su {{marca}} {{modelo}} ({{placa}}). Nos gustaría conocer su opinión: {{link_encuesta}}',
 }

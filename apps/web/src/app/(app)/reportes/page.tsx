@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Loader2, BarChart2, FileDown, ChevronRight, Star, Search, X } from 'lucide-react'
+import { Loader2, BarChart2, ChevronRight, Star, Search, X, TrendingUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
@@ -16,6 +16,9 @@ interface OTReporte {
   clienteNombre: string
   tecnicoNombre: string
   totalFacturado: number | null
+  totalManoObra: number | null
+  comisionTecnico: number | null
+  comisionPct: number
   fechaIngreso: string
   fechaEntrega: string | null
   encuestaPromedio: number | null
@@ -26,6 +29,7 @@ interface Paginado {
   total: number
   page: number
   totalPages: number
+  comisionPct: number
 }
 
 export default function ReportesPage() {
@@ -71,6 +75,24 @@ export default function ReportesPage() {
           </div>
         </div>
       </div>
+
+      {/* KPI comisiones */}
+      {resultado && resultado.data.length > 0 && (
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+            <TrendingUp className="h-5 w-5 text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-xs text-muted-foreground">Comisiones en este período</p>
+              <p className="text-lg font-bold text-emerald-400">
+                {formatCurrency(resultado.data.reduce((s, o) => s + (o.comisionTecnico ?? 0), 0))}
+              </p>
+            </div>
+            <span className="text-xs text-muted-foreground border-l border-surface-2 pl-3">
+              {resultado.comisionPct}% mano de obra
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="flex flex-wrap items-end gap-3 bg-surface border border-surface-2 rounded-xl p-4">
@@ -120,6 +142,7 @@ export default function ReportesPage() {
                 <th className="px-4 py-3 text-left hidden lg:table-cell">Técnico</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Entrega</th>
                 <th className="px-4 py-3 text-right hidden sm:table-cell">Total</th>
+                <th className="px-4 py-3 text-right hidden xl:table-cell text-emerald-400">Comisión</th>
                 <th className="px-4 py-3 text-center hidden lg:table-cell">Encuesta</th>
                 <th className="w-10" />
               </tr>
@@ -140,6 +163,9 @@ export default function ReportesPage() {
                   <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">{formatDate(ot.fechaEntrega)}</td>
                   <td className="px-4 py-3 hidden sm:table-cell text-right font-medium text-white">
                     {ot.totalFacturado !== null ? formatCurrency(ot.totalFacturado) : '—'}
+                  </td>
+                  <td className="px-4 py-3 hidden xl:table-cell text-right font-medium text-emerald-400">
+                    {ot.comisionTecnico !== null ? formatCurrency(ot.comisionTecnico) : '—'}
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell text-center">
                     {ot.encuestaPromedio !== null ? (

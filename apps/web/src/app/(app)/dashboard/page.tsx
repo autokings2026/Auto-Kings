@@ -1,9 +1,10 @@
 import { auth } from '@/auth'
-import { Car, CalendarDays, CheckCircle2, Clock } from 'lucide-react'
+import { Car, CalendarDays, CheckCircle2, Clock, TrendingUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { LABEL_ROL, FaseOT, LABEL_FASE } from '@kings/shared'
+import { LABEL_ROL, FaseOT, LABEL_FASE, RolUsuario } from '@kings/shared'
 import Link from 'next/link'
 import { getDashboardStats } from '@/lib/services/ordenes'
+import { formatCurrency } from '@/lib/utils'
 
 export const metadata = { title: 'Dashboard | Kings Auto' }
 
@@ -20,7 +21,7 @@ export default async function DashboardPage() {
   if (!session) return null
   const { nombre, rol } = session.user
 
-  const stats = await getDashboardStats().catch(() => null)
+  const stats = await getDashboardStats({ userId: session.user.id, rol: session.user.rol }).catch(() => null)
 
   const cards = [
     {
@@ -83,6 +84,25 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* KPI comisión del mes */}
+      {stats?.comisionMes !== null && stats?.comisionMes !== undefined && (
+        <Card className="bg-emerald-500/5 border-emerald-500/20">
+          <CardContent className="flex items-center gap-4 pt-5 pb-5">
+            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
+              <TrendingUp className="h-5 w-5 text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-2xl font-bold text-emerald-400">{formatCurrency(stats.comisionMes)}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {session.user.rol === RolUsuario.ADMIN
+                  ? `Comisiones pagadas este mes (${stats.comisionPct}%)`
+                  : `Mi comisión este mes (${stats.comisionPct}% mano de obra)`}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Distribución por fase */}
       {stats && Object.keys(stats.porFase).length > 0 && (
