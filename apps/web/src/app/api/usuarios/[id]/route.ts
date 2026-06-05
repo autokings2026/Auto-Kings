@@ -64,7 +64,9 @@ export async function PUT(
   if (fechaIngreso !== undefined) data['fechaIngreso'] = fechaIngreso ? new Date(fechaIngreso) : null
 
   if (rest.email) {
-    const conflict = await prisma.user.findFirst({ where: { email: rest.email, NOT: { id } } })
+    const emailNorm = rest.email.toLowerCase().trim()
+    data['email'] = emailNorm
+    const conflict = await prisma.user.findFirst({ where: { email: emailNorm, NOT: { id } } })
     if (conflict) return Response.json({ message: 'Ya existe un usuario con ese correo' }, { status: 409 })
   }
 

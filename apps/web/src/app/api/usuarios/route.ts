@@ -53,7 +53,8 @@ export async function POST(req: NextRequest) {
 
   const { password, fechaIngreso, ...rest } = parsed.data
 
-  const exists = await prisma.user.findUnique({ where: { email: rest.email } })
+  const emailNorm = rest.email.toLowerCase().trim()
+  const exists = await prisma.user.findUnique({ where: { email: emailNorm } })
   if (exists) {
     return Response.json({ message: 'Ya existe un usuario con ese correo' }, { status: 409 })
   }
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
   const nuevo = await prisma.user.create({
     data: {
       ...rest,
+      email: emailNorm,
       password: hash,
       fechaIngreso: fechaIngreso ? new Date(fechaIngreso) : null,
     },
