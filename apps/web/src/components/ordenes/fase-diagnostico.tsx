@@ -175,12 +175,80 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
             )}
           </div>
 
-          <div className="rounded-lg border border-surface-2 overflow-hidden">
+          {/* Móvil: cards apiladas · Desktop: tabla */}
+          <div className="space-y-2 sm:hidden">
+            {items.map((item, i) => (
+              <div key={i} className="rounded-lg border border-surface-2 bg-surface-2/40 p-3 space-y-2">
+                {/* Fila 1: tipo + eliminar */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={item.tipo}
+                    onChange={e => updateItem(i, 'tipo', e.target.value)}
+                    disabled={readonly}
+                    className="flex-1 h-9 text-sm rounded-lg border border-surface-2 bg-surface-2 px-2 text-white disabled:opacity-60 focus:outline-none focus:ring-1 focus:ring-secondary"
+                  >
+                    <option value="MANO_OBRA">Mano de obra</option>
+                    <option value="MATERIAL">Material</option>
+                  </select>
+                  {!readonly && (
+                    <button
+                      onClick={() => setItems(rows => rows.filter((_, idx) => idx !== i))}
+                      className="p-1.5 text-muted-foreground hover:text-red-400 rounded-lg hover:bg-red-400/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                {/* Fila 2: descripción */}
+                <input
+                  value={item.descripcion}
+                  onChange={e => updateItem(i, 'descripcion', e.target.value)}
+                  disabled={readonly}
+                  placeholder="Descripción…"
+                  className="w-full h-9 text-sm rounded-lg border border-surface-2 bg-surface-2 px-3 text-white placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-secondary disabled:opacity-60"
+                />
+                {/* Fila 3: cant · precio · subtotal */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground pl-1">Cantidad</p>
+                    <input
+                      value={item.cantidad}
+                      onChange={e => updateItem(i, 'cantidad', e.target.value)}
+                      disabled={readonly}
+                      type="number"
+                      min="0"
+                      className="w-full h-9 text-sm text-center rounded-lg border border-surface-2 bg-surface-2 px-2 text-white focus:outline-none focus:ring-1 focus:ring-secondary disabled:opacity-60"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground pl-1">P. unitario</p>
+                    <input
+                      value={item.precioUnitario}
+                      onChange={e => updateItem(i, 'precioUnitario', e.target.value)}
+                      disabled={readonly}
+                      type="number"
+                      min="0"
+                      className="w-full h-9 text-sm text-right rounded-lg border border-surface-2 bg-surface-2 px-2 text-white focus:outline-none focus:ring-1 focus:ring-secondary disabled:opacity-60"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-0.5 text-right">
+                    <p className="text-[10px] text-muted-foreground">Subtotal</p>
+                    <p className="h-9 flex items-center justify-end text-sm font-medium text-white pr-1">
+                      {formatCurrency(Number(item.cantidad) * Number(item.precioUnitario))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: tabla */}
+          <div className="hidden sm:block rounded-lg border border-surface-2 overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-surface-2 text-xs text-muted-foreground">
                   <th className="px-3 py-2 text-left">Descripción</th>
-                  <th className="px-3 py-2 text-left w-32">Tipo</th>
+                  <th className="px-3 py-2 text-left w-36">Tipo</th>
                   <th className="px-3 py-2 text-right w-20">Cant.</th>
                   <th className="px-3 py-2 text-right w-28">P. Unit.</th>
                   <th className="px-3 py-2 text-right w-28">Subtotal</th>

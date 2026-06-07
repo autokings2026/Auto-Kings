@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Users,
   X,
+  TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -41,6 +42,12 @@ const navItems: NavItem[] = [
     href: '/reportes',
     label: 'Reportes',
     icon: BarChart2,
+    roles: [RolUsuario.ADMIN],
+  },
+  {
+    href: '/comisiones',
+    label: 'Comisiones',
+    icon: TrendingUp,
     roles: [RolUsuario.ADMIN],
   },
   {
