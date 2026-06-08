@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   Loader2, Settings, Save, Check, Upload, X, Building2,
-  Clock, Calendar, Bell, Image as ImageIcon, Percent,
+  Clock, Calendar, Bell, Image as ImageIcon, Percent, AlertTriangle, Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -65,6 +65,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputCls = 'w-full rounded-lg border border-surface-2 bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary'
 
+const PALABRA_RESET = 'LIMPIAR'
+
 export default function ConfigPage() {
   const { data: session } = useSession()
   const [config, setConfig] = useState<Config | null>(null)
@@ -73,6 +75,13 @@ export default function ConfigPage() {
   const [saved, setSaved] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  // Reset modal
+  const [resetModal, setResetModal] = useState(false)
+  const [resetWord, setResetWord] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetDone, setResetDone] = useState(false)
 
   // form state
   const [nombre, setNombre] = useState('')
@@ -166,6 +175,28 @@ export default function ConfigPage() {
 
   const updateHorario = (dia: number, field: keyof Horario, value: string | boolean) => {
     setHorarios(prev => prev.map(h => h.dia === dia ? { ...h, [field]: value } : h))
+  }
+
+  const handleReset = async () => {
+    setResetting(true)
+    setResetError('')
+    try {
+      const res = await fetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmacion: resetWord }),
+      })
+      if (!res.ok) {
+        const e = await res.json()
+        setResetError(e.message ?? 'Error al limpiar')
+        return
+      }
+      setResetDone(true)
+      setResetModal(false)
+      setResetWord('')
+    } finally {
+      setResetting(false)
+    }
   }
 
   if (loading) return (
@@ -379,6 +410,96 @@ export default function ConfigPage() {
 
         </div>
       </div>
+
+      {/* ── Zona de peligro ── */}
+      <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-red-400" />
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-red-400">Zona de peligro</h2>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Elimina todos los datos operativos (citas, órdenes de trabajo, clientes, reportes y mensajes).
+          La configuración del centro de servicio, catálogo de vehículos, usuarios y plantillas se conservan.
+        </p>
+        {resetDone && (
+          <p className="text-sm text-green-400 font-medium">Base de datos limpiada correctamente.</p>
+        )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setResetModal(true); setResetWord(''); setResetError(''); setResetDone(false) }}
+          className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/60 gap-2"
+        >
+          <Trash2 className="h-4 w-4" />
+          Limpiar datos
+        </Button>
+      </div>
+
+      {/* ── Modal de confirmación de reset ── */}
+      {resetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-surface border border-red-500/30 rounded-xl w-full max-w-md shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-red-500/20">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+                <h2 className="font-semibold text-white">Limpiar base de datos</h2>
+              </div>
+              <button onClick={() => setResetModal(false)} className="text-muted-foreground hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-5 py-4 space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 space-y-1.5">
+                  <p className="font-semibold text-red-400 uppercase tracking-wide">Se eliminará</p>
+                  {['Citas', 'Órdenes de trabajo', 'Diagnósticos y cotizaciones', 'Fotos subidas', 'Historial de mensajes', 'Registros de clientes'].map(i => (
+                    <p key={i} className="text-red-300/80 flex items-center gap-1.5">
+                      <span className="text-red-500">✕</span> {i}
+                    </p>
+                  ))}
+                </div>
+                <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3 space-y-1.5">
+                  <p className="font-semibold text-green-400 uppercase tracking-wide">Se conserva</p>
+                  {['Configuración del taller', 'Catálogo de vehículos', 'Usuarios del sistema', 'Plantillas de WhatsApp', 'Porcentaje de comisión'].map(i => (
+                    <p key={i} className="text-green-300/80 flex items-center gap-1.5">
+                      <span className="text-green-500">✓</span> {i}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">
+                  Escribe <span className="font-bold text-white">{PALABRA_RESET}</span> para confirmar
+                </label>
+                <input
+                  value={resetWord}
+                  onChange={e => setResetWord(e.target.value.toUpperCase())}
+                  placeholder={PALABRA_RESET}
+                  className="w-full rounded-lg border border-surface-2 bg-surface-2 px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500 font-mono tracking-widest"
+                />
+                {resetError && <p className="text-xs text-red-400">{resetError}</p>}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-3 px-5 py-4 border-t border-surface-2">
+              <Button variant="outline" onClick={() => setResetModal(false)}>Cancelar</Button>
+              <button
+                onClick={handleReset}
+                disabled={resetWord !== PALABRA_RESET || resetting}
+                className="flex items-center gap-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 text-sm font-medium transition-colors"
+              >
+                {resetting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                {resetting ? 'Limpiando…' : 'Limpiar base de datos'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
