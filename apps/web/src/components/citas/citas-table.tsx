@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -69,6 +69,75 @@ const ESTADO_LABEL: Record<EstadoCita, string> = {
   [EstadoCita.NO_ASISTIO]: 'No asistió',
 }
 
+// ── Modal WhatsApp post-confirmación ─────────────────────────────────────────
+
+function WaConfirmModal({
+  cita,
+  template,
+  onClose,
+  onCrearOT,
+}: {
+  cita: Cita
+  template: string
+  onClose: () => void
+  onCrearOT: () => void
+}) {
+  const mensaje = buildWAMessage(template, cita)
+  const waUrl = `https://wa.me/${cita.clienteTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-surface border border-surface-2 rounded-xl w-full max-w-md shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-2">
+          <div>
+            <h2 className="font-semibold text-white">Cita confirmada</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {cita.clienteNombre} · {cita.marcaNombre} {cita.modeloNombre} · {cita.placa}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-muted-foreground hover:text-white">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Mensaje WA */}
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Mensaje de confirmación · WhatsApp
+          </p>
+          <div className="rounded-lg bg-surface-2 p-3 text-xs text-white whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto border border-surface-2">
+            {mensaje}
+          </div>
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 hover:bg-green-500 text-white py-2.5 text-sm font-medium transition-colors"
+          >
+            <MessageCircle className="h-4 w-4" />
+            Enviar por WhatsApp
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-5 py-4 border-t border-surface-2">
+          <button onClick={onClose} className="text-sm text-muted-foreground hover:text-white">
+            Cerrar
+          </button>
+          {!cita.ordenTrabajo && (
+            <Button variant="primary" size="sm" onClick={onCrearOT}>
+              Crear Orden de Trabajo →
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Badges ────────────────────────────────────────────────────────────────────
+
 function EstadoBadge({ estado }: { estado: EstadoCita }) {
   return (
     <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', ESTADO_STYLE[estado])}>
@@ -91,6 +160,7 @@ export function CitasTable() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [convertModal, setConvertModal] = useState<{ citaId: string; clienteNombre: string; vehiculo: string } | null>(null)
   const [waTemplate, setWaTemplate] = useState<string>(FALLBACK_WA)
+  const [waModal, setWaModal] = useState<Cita | null>(null)
 
   // Cargar plantilla WA de recepción
   useEffect(() => {
@@ -138,6 +208,10 @@ export function CitasTable() {
   const updateEstado = async (id: string, nuevoEstado: EstadoCita) => {
     if (!session?.user) return
     setUpdatingId(id)
+    // Guardar cita antes del refresh para el modal WA
+    const citaPrevia = nuevoEstado === EstadoCita.CONFIRMADA
+      ? (data?.data.find(c => c.id === id) ?? null)
+      : null
     try {
       const res = await fetch(`/api/citas/${id}/estado`, {
         method: 'PATCH',
@@ -145,10 +219,10 @@ export function CitasTable() {
         body: JSON.stringify({ estado: nuevoEstado }),
       })
       if (!res.ok) return
-      // Si el filtro activo filtraría a la cita recién actualizada, limpiar el filtro
-      // para que el usuario vea la cita con sus nuevos botones (ej: botón WA tras confirmar)
       if (estado && estado !== nuevoEstado) setEstado('')
       await fetchCitas()
+      // Al confirmar, abrir automáticamente el modal de WhatsApp
+      if (citaPrevia) setWaModal({ ...citaPrevia, estado: EstadoCita.CONFIRMADA })
     } finally {
       setUpdatingId(null)
     }
@@ -264,14 +338,12 @@ export function CitasTable() {
                               </button>
                             )}
                             {cita.estado === EstadoCita.CONFIRMADA && (
-                              <a
-                                href={`https://wa.me/${cita.clienteTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(buildWAMessage(waTemplate, cita))}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                onClick={() => setWaModal(cita)}
                                 className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 underline"
                               >
                                 <MessageCircle className="h-3 w-3" /> WA
-                              </a>
+                              </button>
                             )}
                             {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && !cita.ordenTrabajo && (
                               <button
@@ -328,6 +400,21 @@ export function CitasTable() {
             </Button>
           </div>
         </div>
+      )}
+      {waModal && (
+        <WaConfirmModal
+          cita={waModal}
+          template={waTemplate}
+          onClose={() => setWaModal(null)}
+          onCrearOT={() => {
+            setWaModal(null)
+            setConvertModal({
+              citaId: waModal.id,
+              clienteNombre: waModal.clienteNombre,
+              vehiculo: `${waModal.marcaNombre} ${waModal.modeloNombre} ${waModal.anio}`,
+            })
+          }}
+        />
       )}
       {convertModal && (
         <ConvertOtModal

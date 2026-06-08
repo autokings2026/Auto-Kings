@@ -121,7 +121,12 @@ export function OtDetail({ ordenId }: { ordenId: string }) {
       if (!res.ok) { router.push('/ordenes'); return }
       const data: OrdenDetalle = await res.json()
       setOrden(data)
-      setActiveFase((prev) => prev ?? data.faseActual)
+      setActiveFase((prev) => {
+        if (!prev) return data.faseActual as FaseOT
+        const prevIdx = ORDEN_FASES.indexOf(prev)
+        const newIdx = ORDEN_FASES.indexOf(data.faseActual as FaseOT)
+        return newIdx > prevIdx ? data.faseActual as FaseOT : prev
+      })
     } finally {
       setLoading(false)
     }
