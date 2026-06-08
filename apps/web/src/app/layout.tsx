@@ -12,10 +12,16 @@ export const metadata: Metadata = {
     template: '%s — Kings Auto Diagnósticos',
   },
   description: 'Sistema de gestión del centro de servicio Kings Auto Diagnósticos',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Kings Auto',
+    title: 'Centro de Servicios - Kings Auto',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo-dark.jpeg',
+    shortcut: '/logo-dark.jpeg',
   },
 }
 

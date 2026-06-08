@@ -1,9 +1,16 @@
 import Image from 'next/image'
 import { BookingForm } from '@/components/reservar/booking-form'
+import { prisma } from '@/lib/prisma'
 
 export const metadata = { title: 'Reservar Cita | Kings Auto Diagnósticos' }
 
-export default function ReservarPage() {
+export default async function ReservarPage() {
+  const config = await prisma.configuracionTaller.findFirst({
+    select: { nombre: true, direccion: true },
+  })
+  const nombreTaller = config?.nombre ?? 'Kings Auto Diagnósticos'
+  const ubicacion = config?.direccion ?? 'Honduras'
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -27,7 +34,7 @@ export default function ReservarPage() {
       </main>
 
       <footer className="text-center py-4 text-xs text-muted-foreground border-t border-surface-2">
-        © {new Date().getFullYear()} Kings Auto Diagnósticos · Tegucigalpa, Honduras
+        © {new Date().getFullYear()} {nombreTaller} · {ubicacion}
       </footer>
     </div>
   )
