@@ -308,6 +308,10 @@ export function CitasTable() {
                     <td className="px-4 py-3">
                       <div className="font-medium text-white">{cita.clienteNombre}</div>
                       <div className="text-muted-foreground text-xs">{cita.clienteTelefono}</div>
+                      {/* Vehículo visible solo en móvil */}
+                      <div className="sm:hidden text-xs text-accent mt-0.5">
+                        {cita.marcaNombre} {cita.modeloNombre} {cita.anio} · <span className="text-muted-foreground">{cita.placa}</span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <div className="text-white">{cita.marcaNombre} {cita.modeloNombre}</div>
