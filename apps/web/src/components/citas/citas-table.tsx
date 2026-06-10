@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -39,7 +39,7 @@ interface Cita {
   hora: string
   comentarios: string | null
   estado: EstadoCita
-  ordenTrabajo: { id: string; numero: string } | null
+  ordenTrabajo: { id: string; numero: string; tecnico: { nombre: string } } | null
   createdAt: string
 }
 
@@ -323,14 +323,24 @@ export function CitasTable() {
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
                       <EstadoBadge estado={cita.estado} />
-                      {cita.ordenTrabajo && (
-                        <div className="text-xs text-accent mt-1">OT #{cita.ordenTrabajo.numero}</div>
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {updatingId === cita.id ? (
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : cita.ordenTrabajo ? (
+                          /* Cita bloqueada — ya tiene OT asignada */
+                          <div className="flex items-center gap-1.5">
+                            <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div>
+                              <p className="text-xs font-medium text-accent leading-tight">
+                                {cita.ordenTrabajo.numero}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground leading-tight">
+                                {cita.ordenTrabajo.tecnico.nombre}
+                              </p>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             {cita.estado === EstadoCita.PENDIENTE && (
@@ -349,7 +359,7 @@ export function CitasTable() {
                                 <MessageCircle className="h-3 w-3" /> WA
                               </button>
                             )}
-                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && !cita.ordenTrabajo && (
+                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && (
                               <button
                                 onClick={() => updateEstado(cita.id, EstadoCita.CANCELADA)}
                                 className="text-xs text-red-400 hover:text-red-300 underline"
@@ -357,7 +367,7 @@ export function CitasTable() {
                                 Cancelar
                               </button>
                             )}
-                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && !cita.ordenTrabajo && (
+                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && (
                               <button
                                 onClick={() => setConvertModal({
                                   citaId: cita.id,

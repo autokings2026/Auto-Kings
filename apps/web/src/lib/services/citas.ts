@@ -155,7 +155,7 @@ export async function findAllCitas(query: {
   const [citas, total] = await Promise.all([
     prisma.cita.findMany({
       where,
-      include: { cliente: true, marca: true, modelo: true, ordenTrabajo: { select: { id: true, numero: true } } },
+      include: { cliente: true, marca: true, modelo: true, ordenTrabajo: { select: { id: true, numero: true, tecnico: { select: { nombre: true } } } } },
       orderBy: [{ fecha: 'asc' }, { hora: 'asc' }],
       skip: (page - 1) * pageSize,
       take: pageSize,

@@ -1,19 +1,13 @@
 import { prisma } from '@/lib/prisma'
 
+// Cada reserva crea un cliente nuevo e independiente.
+// No se reutilizan registros por teléfono para evitar pisar datos de otras reservas.
 export async function findOrCreateCliente(dto: {
   nombre: string
   telefono: string
   email?: string
 }) {
-  const existing = await prisma.cliente.findFirst({ where: { telefono: dto.telefono } })
-  if (existing) {
-    return prisma.cliente.update({
-      where: { id: existing.id },
-      data: {
-        nombre: dto.nombre,
-        ...(dto.email ? { email: dto.email } : {}),
-      },
-    })
-  }
-  return prisma.cliente.create({ data: dto })
+  return prisma.cliente.create({
+    data: { nombre: dto.nombre, telefono: dto.telefono, email: dto.email ?? null },
+  })
 }
