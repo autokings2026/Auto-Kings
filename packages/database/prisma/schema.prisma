@@ -91,6 +91,17 @@ enum TipoEventoOT {
   CITA_CONVERTIDA
 }
 
+enum EstadoResena {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+
+enum EstadoBlog {
+  BORRADOR
+  PUBLICADO
+}
+
 enum TipoMensajeWA {
   SALIENTE  // enviado desde la app (abre wa.me)
   ENTRANTE  // recibido (registrado manualmente por el empleado)
@@ -517,6 +528,10 @@ model ConfiguracionTaller {
   // Comisión para técnicos (% sobre mano de obra por OT reparada)
   comisionTecnicoPct Float @default(8)
 
+  // Sitio web público
+  whatsapp    String? // número WA con código de país: 50499999999
+  mapsEmbedUrl String? // URL del iframe de Google Maps
+
   updatedAt DateTime @updatedAt
 
   @@map("configuracion_taller")
@@ -538,4 +553,61 @@ model PlantillaMensaje {
   updatedAt DateTime        @updatedAt
 
   @@map("plantillas_mensajes")
+}
+
+// ─────────────────────────────────────────
+// LANDING PAGE — GALERÍA DE TRABAJOS
+// ─────────────────────────────────────────
+
+model GaleriaTrabajo {
+  id          String   @id @default(cuid())
+  url         String
+  publicId    String
+  descripcion String?
+  categoria   String?  // FRENOS | MOTOR | DIAGNOSTICO | ELECTRICO | MANTENIMIENTO | OTRO
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  @@map("galeria_trabajos")
+}
+
+// ─────────────────────────────────────────
+// LANDING PAGE — RESEÑAS DE CLIENTES
+// ─────────────────────────────────────────
+
+model Resena {
+  id             String       @id @default(cuid())
+  nombre         String
+  vehiculoMarca  String?
+  vehiculoModelo String?
+  vehiculoAnio   Int?
+  placa          String?
+  calificacion   Int          // 1–5 estrellas
+  comentario     String       @db.Text
+  estado         EstadoResena @default(PENDIENTE)
+  createdAt      DateTime     @default(now())
+
+  @@map("resenas")
+}
+
+// ─────────────────────────────────────────
+// LANDING PAGE — BLOG
+// ─────────────────────────────────────────
+
+model BlogPost {
+  id        String     @id @default(cuid())
+  titulo    String
+  slug      String     @unique
+  extracto  String     @db.Text
+  contenido String     @db.Text
+  categoria String?
+  imagenUrl String?
+  publicId  String?
+  estado    EstadoBlog @default(BORRADOR)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([slug])
+  @@map("blog_posts")
 }

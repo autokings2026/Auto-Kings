@@ -17,6 +17,8 @@ const UpdateConfigSchema = z.object({
   alertaAmarillaMinutos: z.number().min(1).optional(),
   alertaRojaMinutos:     z.number().min(1).optional(),
   comisionTecnicoPct:    z.number().min(0).max(100).optional(),
+  whatsapp:              z.string().optional().nullable(),
+  mapsEmbedUrl:          z.string().optional().nullable(),
 })
 
 export async function GET() {

@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import {
   Loader2, Settings, Save, Check, Upload, X, Building2,
   Clock, Calendar, Bell, Image as ImageIcon, Percent, AlertTriangle, Trash2,
+  Globe, MessageCircle, MapPin,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,8 @@ interface Config {
   alertaAmarillaMinutos: number
   alertaRojaMinutos: number
   comisionTecnicoPct: number
+  whatsapp: string | null
+  mapsEmbedUrl: string | null
 }
 
 const DEFAULT_HORARIOS: Horario[] = DIAS.map((_, i) => ({
@@ -95,6 +98,8 @@ export default function ConfigPage() {
   const [alertaAmarilla, setAlertaAmarilla] = useState(60)
   const [alertaRoja, setAlertaRoja] = useState(120)
   const [comisionPct, setComisionPct] = useState(8)
+  const [whatsapp, setWhatsapp] = useState('')
+  const [mapsEmbedUrl, setMapsEmbedUrl] = useState('')
 
   const headers = useCallback(
     () => ({ 'Content-Type': 'application/json' }),
@@ -121,6 +126,8 @@ export default function ConfigPage() {
         setAlertaAmarilla(data.alertaAmarillaMinutos ?? 60)
         setAlertaRoja(data.alertaRojaMinutos ?? 120)
         setComisionPct(data.comisionTecnicoPct ?? 8)
+        setWhatsapp(data.whatsapp ?? '')
+        setMapsEmbedUrl(data.mapsEmbedUrl ?? '')
       })
       .finally(() => setLoading(false))
   }, [session, headers])
@@ -161,6 +168,8 @@ export default function ConfigPage() {
           alertaAmarillaMinutos: alertaAmarilla,
           alertaRojaMinutos: alertaRoja,
           comisionTecnicoPct: comisionPct,
+          whatsapp: whatsapp || null,
+          mapsEmbedUrl: mapsEmbedUrl || null,
         }),
       })
       if (res.ok) {
@@ -410,6 +419,39 @@ export default function ConfigPage() {
 
         </div>
       </div>
+
+      {/* ── Sitio web público ── */}
+      <SectionCard icon={<Globe className="h-4 w-4" />} title="Sitio web público">
+        <p className="text-xs text-muted-foreground -mt-1">
+          Datos que se muestran en la landing page pública del centro de servicio.
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4 mt-1">
+          <Field label="Número de WhatsApp (con código de país)">
+            <div className="relative">
+              <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                className={`${inputCls} pl-8`}
+                value={whatsapp}
+                onChange={e => setWhatsapp(e.target.value)}
+                placeholder="50499999999"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Sin espacios ni guiones. Ej: 50498765432</p>
+          </Field>
+          <Field label="URL del embed de Google Maps">
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                className={`${inputCls} pl-8`}
+                value={mapsEmbedUrl}
+                onChange={e => setMapsEmbedUrl(e.target.value)}
+                placeholder="https://www.google.com/maps/embed?pb=..."
+              />
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Obtén el link desde Google Maps → Compartir → Insertar mapa.</p>
+          </Field>
+        </div>
+      </SectionCard>
 
       {/* ── Zona de peligro ── */}
       <div className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 space-y-3">

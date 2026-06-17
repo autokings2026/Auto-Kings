@@ -7,9 +7,16 @@ export default auth((req) => {
 
   // Rutas públicas — siempre accesibles
   const isPublicPath =
+    nextUrl.pathname === '/' ||
     nextUrl.pathname.startsWith('/login') ||
     nextUrl.pathname.startsWith('/reservar') ||
     nextUrl.pathname.startsWith('/encuesta') ||
+    nextUrl.pathname.startsWith('/servicios') ||
+    nextUrl.pathname.startsWith('/nosotros') ||
+    nextUrl.pathname.startsWith('/galeria') ||
+    nextUrl.pathname.startsWith('/resenas') ||
+    nextUrl.pathname.startsWith('/blog') ||
+    nextUrl.pathname.startsWith('/api/public') ||
     nextUrl.pathname.startsWith('/api/auth')
 
   if (!isLoggedIn && !isPublicPath) {

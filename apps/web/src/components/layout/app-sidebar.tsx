@@ -16,6 +16,9 @@ import {
   Users,
   X,
   TrendingUp,
+  Images,
+  Star,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -25,6 +28,7 @@ interface NavItem {
   label: string
   icon: React.ElementType
   roles?: RolUsuario[]
+  group?: string
 }
 
 const navItems: NavItem[] = [
@@ -55,6 +59,27 @@ const navItems: NavItem[] = [
     label: 'Equipo de Trabajo',
     icon: Users,
     roles: [RolUsuario.ADMIN],
+  },
+  {
+    href: '/contenido/galeria',
+    label: 'Galería',
+    icon: Images,
+    roles: [RolUsuario.ADMIN],
+    group: 'Contenido Web',
+  },
+  {
+    href: '/contenido/resenas',
+    label: 'Reseñas',
+    icon: Star,
+    roles: [RolUsuario.ADMIN],
+    group: 'Contenido Web',
+  },
+  {
+    href: '/contenido/blog',
+    label: 'Blog',
+    icon: BookOpen,
+    roles: [RolUsuario.ADMIN],
+    group: 'Contenido Web',
   },
   {
     href: '/config',
@@ -105,23 +130,31 @@ export function AppSidebar({ user, onClose }: AppSidebarProps) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {visibleItems.map((item) => {
+        {visibleItems.map((item, idx) => {
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+          const prevItem = visibleItems[idx - 1]
+          const showGroupLabel = item.group && item.group !== prevItem?.group
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-secondary/20 text-secondary border border-secondary/20'
-                  : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground',
+            <div key={item.href}>
+              {showGroupLabel && (
+                <p className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  {item.group}
+                </p>
               )}
-            >
-              <item.icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-secondary')} />
-              {item.label}
-            </Link>
+              <Link
+                href={item.href}
+                onClick={onClose}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-secondary/20 text-secondary border border-secondary/20'
+                    : 'text-muted-foreground hover:bg-surface-2 hover:text-foreground',
+                )}
+              >
+                <item.icon className={cn('h-4 w-4 flex-shrink-0', isActive && 'text-secondary')} />
+                {item.label}
+              </Link>
+            </div>
           )
         })}
       </nav>
