@@ -2,14 +2,17 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  ChevronRight, ArrowDown, Wrench, Cpu, Radar, CircleDot,
+  ChevronRight, Wrench, Cpu, Radar, CircleDot,
   Droplet, Disc, MapPin, Phone, Clock, Award, BookOpen,
   ShieldCheck, Calendar, Star,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import { SeguimientoWidget } from '@/components/marketing/SeguimientoWidget'
-import { GaleriaGrid } from '@/components/marketing/GaleriaGrid'
+import { GaleriaCarousel } from '@/components/marketing/GaleriaCarousel'
 import { ResenaCard } from '@/components/marketing/ResenaCard'
+import { HeroSlideshow } from '@/components/marketing/HeroSlideshow'
+import { CardCarousel } from '@/components/marketing/CardCarousel'
+import { Reveal } from '@/components/marketing/Reveal'
 
 export const metadata: Metadata = {
   title: 'Kings Auto Diagnósticos — Cofradía, Cortés, Honduras',
@@ -29,9 +32,18 @@ const PHOTOS = {
   tablero: 'https://images.unsplash.com/photo-1777286644467-2f2324150d9c?w=1920&q=80&auto=format&fit=crop',
 }
 
+// Hero — vehículos de alto lujo + equipo de diagnóstico (Unsplash, uso libre)
+const HERO_PHOTOS = [
+  'https://images.unsplash.com/photo-1749639881040-a6eb9abb398e?w=1920&q=80&auto=format&fit=crop', // Mercedes-AMG GT, exterior nocturno
+  'https://images.unsplash.com/photo-1727893380169-4dda123e19f7?w=1920&q=80&auto=format&fit=crop', // Escáner OBD conectado al vehículo
+  'https://images.unsplash.com/photo-1745709575370-0e6b69fe4267?w=1920&q=80&auto=format&fit=crop', // Tablero digital de superdeportivo
+  'https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=1920&q=80&auto=format&fit=crop', // Mecánico con guantes reparando
+  'https://images.unsplash.com/photo-1732347702185-368853f286ae?w=1920&q=80&auto=format&fit=crop', // Interior Mercedes-Maybach, tonos azul/cyan
+]
+
 const DIFERENCIADORES = [
   { icono: Award, titulo: 'Personal Certificado', descripcion: 'Entrenado y certificado por compañías líderes de la industria automotriz: Lear, Ford, General Motors, IATF y más.' },
-  { icono: Cpu, titulo: 'Ingeniería Aplicada', descripcion: 'Un concepto de ingeniería aplicada a tu vehículo, en lugar de taller tradicional.' },
+  { icono: Cpu, titulo: 'Ingeniería Aplicada', descripcion: 'Un concepto de ingeniería aplicada a tu auto, en lugar de taller tradicional.' },
   { icono: BookOpen, titulo: 'Manuales de Fábrica', descripcion: 'Acceso a los manuales de diagnóstico y reparación originales de todos los fabricantes.' },
   { icono: ShieldCheck, titulo: 'Control de Calidad', descripcion: 'Validación y control de calidad en cada reparación: garantizamos un trabajo certificado.' },
 ]
@@ -41,20 +53,19 @@ const DEFAULT_TELEFONO = '+504 9999-9999'
 const DEFAULT_WHATSAPP = '50499999999'
 
 export default async function HomePage() {
-  const [galeria, resenasRaw, totalOrdenes, blogPosts, config] = await Promise.all([
+  const [galeria, resenasRaw, blogPosts, config] = await Promise.all([
     prisma.galeriaTrabajo.findMany({
       where: { activo: true },
       orderBy: [{ orden: 'asc' }, { createdAt: 'desc' }],
-      take: 6,
+      take: 10,
       select: { id: true, url: true, descripcion: true, categoria: true },
     }),
     prisma.resena.findMany({
       where: { estado: 'APROBADA' },
       orderBy: { createdAt: 'desc' },
-      take: 3,
+      take: 8,
       select: { id: true, nombre: true, vehiculoMarca: true, vehiculoModelo: true, vehiculoAnio: true, calificacion: true, comentario: true, createdAt: true },
     }),
-    prisma.ordenTrabajo.count({ where: { estado: 'COMPLETADA' } }),
     prisma.blogPost.findMany({
       where: { estado: 'PUBLICADO' },
       orderBy: { createdAt: 'desc' },
@@ -86,99 +97,26 @@ export default async function HomePage() {
       {/* ══════════════════════════════════════════
           HERO
       ══════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center overflow-hidden bg-[#0a1220]">
+      <section className="relative min-h-screen flex items-end overflow-hidden bg-[#0a1220]">
 
-        {/* Foto de fondo — taller con elevador, Ken Burns lento */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={PHOTOS.elevador}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 w-full h-full object-cover animate-hero-zoom"
-          />
-        </div>
+        {/* Slideshow de fondo — vehículos de alto lujo, rota automáticamente */}
+        <HeroSlideshow images={HERO_PHOTOS} />
 
-        {/* Overlays para legibilidad + tinte de marca */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1220] via-[#0a1220]/90 to-[#0a1220]/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1220] via-transparent to-[#0a1220]/70" />
-        <div className="absolute inset-0 opacity-25" style={{ backgroundImage: 'radial-gradient(circle at 15% 30%, #00d4e8 0%, transparent 40%)' }} />
+        {/* Overlays para legibilidad — más sutiles, dejan ver las fotos */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a1220]/60 via-[#0a1220]/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1220]/85 via-transparent to-transparent" />
 
-        {/* Línea de escaneo animada (estética diagnóstico) */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#00d4e8]/70 to-transparent animate-scan-sweep shadow-[0_0_20px_2px_rgba(0,212,232,0.5)]" />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full pt-24 pb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Texto izquierda */}
-            <div>
-              {/* Logo + Nombre — protagonista */}
-              <div className="flex items-center gap-5 mb-8">
-                <div className="relative h-20 w-20 sm:h-24 sm:w-24 flex-shrink-0">
-                  <span className="absolute inset-0 rounded-2xl border-2 border-[#00d4e8]/50 animate-ring-pulse" />
-                  <span className="absolute inset-0 rounded-2xl border-2 border-[#00d4e8]/50 animate-ring-pulse" style={{ animationDelay: '1.4s' }} />
-                  <div className="absolute inset-0 rounded-2xl bg-[#00d4e8]/25 blur-2xl" />
-                  <div className="relative h-full w-full rounded-2xl overflow-hidden border-2 border-[#00d4e8]/70 shadow-2xl bg-[#0f1a2e]">
-                    <Image src="/logo-dark.jpeg" alt="Kings Auto" fill className="object-contain p-2" priority />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-3xl sm:text-4xl font-bold text-white leading-none tracking-tight drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                    Kings Auto
-                  </p>
-                  <p className="text-sm sm:text-base text-[#00d4e8] tracking-[0.25em] uppercase font-semibold mt-1.5">
-                    Diagnósticos
-                  </p>
-                </div>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6 drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                El diagnóstico
-                <span className="block text-[#00d4e8]">exacto que tu</span>
-                auto necesita
-              </h1>
-              <p className="text-lg text-white/75 mb-10 leading-relaxed max-w-lg">
-                Centro de servicio automotriz con tecnología computarizada y seguimiento digital del estado de tu vehículo en tiempo real.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/reservar" className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-[#0f1a2e] font-bold text-sm bg-[#00d4e8] hover:bg-[#00bcd4] transition-colors shadow-lg shadow-[#00d4e8]/20">
-                  Agendar Cita
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-                <a href="#seguimiento" className="flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl text-white font-semibold text-sm border border-white/20 hover:border-white/40 hover:bg-white/5 transition-colors">
-                  Consultar mi vehículo
-                </a>
-              </div>
-            </div>
-
-            {/* Panel de stats flotante — derecha */}
-            <div className="hidden lg:block">
-              <div className="rounded-2xl bg-white/8 backdrop-blur-md border border-white/15 p-8 space-y-5 shadow-2xl">
-                <p className="text-[#00d4e8] text-xs font-semibold tracking-widest uppercase">Por qué elegirnos</p>
-                {[
-                  { num: `${Math.max(totalOrdenes, 100)}+`, label: 'Vehículos atendidos' },
-                  { num: '15+', label: 'Años de experiencia' },
-                  { num: '6', label: 'Especialidades técnicas' },
-                  { num: '98%', label: 'Clientes satisfechos' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between border-b border-white/8 pb-4 last:border-0 last:pb-0">
-                    <span className="text-white/60 text-sm">{s.label}</span>
-                    <span className="text-xl font-bold text-white" style={{ fontFamily: 'Orbitron, sans-serif' }}>{s.num}</span>
-                  </div>
-                ))}
-                <Link href="/reservar" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-sm hover:bg-[#00bcd4] transition-colors mt-4">
-                  Reservar ahora <ChevronRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full pb-12 sm:pb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
+              Kings Auto Diagnóstico
+              <span className="block text-[#00d4e8]">Ingeniería Aplicada</span>
+              a tu Auto
+            </h1>
+            <p className="text-base sm:text-lg text-white/75 leading-relaxed">
+              Kings Auto Diagnósticos es un centro de servicio de diagnóstico y reparación automotriz con un solo método: tecnología aplicada. No adivinamos, no probamos. Escaneamos, analizamos y reparamos con tecnología que no falla.
+            </p>
           </div>
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-white/40">
-          <span className="text-[10px] tracking-widest uppercase">Desliza</span>
-          <ArrowDown className="h-4 w-4 animate-bounce" />
         </div>
       </section>
 
@@ -186,7 +124,7 @@ export default async function HomePage() {
           SERVICIOS — BENTO GRID
       ══════════════════════════════════════════ */}
       <section id="servicios" className="py-24 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
+        <Reveal className="max-w-6xl mx-auto">
           <div className="mb-12">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Especialidades</p>
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -308,7 +246,7 @@ export default async function HomePage() {
             </div>
 
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* ══════════════════════════════════════════
@@ -321,10 +259,10 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-[#0a1220]/75" />
         <div className="absolute inset-0 opacity-50" style={{ backgroundImage: 'radial-gradient(circle at 50% 0%, rgba(0,212,232,0.14), transparent 55%)' }} />
 
-        <div className="max-w-3xl mx-auto relative z-10">
+        <Reveal className="max-w-3xl mx-auto relative z-10">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Seguimiento en tiempo real</p>
-            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>¿Cómo va tu vehículo?</h2>
+            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>¿Cómo va tu auto?</h2>
             <p className="text-white/60 text-sm leading-relaxed">Ingresa la placa para conocer el estado de tu cita o el avance de tu orden de trabajo.</p>
           </div>
 
@@ -355,14 +293,14 @@ export default async function HomePage() {
               <SeguimientoWidget />
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* ══════════════════════════════════════════
           GALERÍA
       ══════════════════════════════════════════ */}
       <section id="galeria" className="py-24 px-4 sm:px-6 bg-gray-50 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
+        <Reveal className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
             <div>
               <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Nuestro trabajo</p>
@@ -373,20 +311,20 @@ export default async function HomePage() {
             </Link>
           </div>
           {galeria.length > 0 ? (
-            <GaleriaGrid items={galeria} showLink />
+            <GaleriaCarousel items={galeria} showLink />
           ) : (
             <div className="rounded-xl border border-dashed border-gray-200 bg-white p-16 text-center">
               <p className="text-gray-400">Pronto publicaremos fotos de nuestros trabajos.</p>
             </div>
           )}
-        </div>
+        </Reveal>
       </section>
 
       {/* ══════════════════════════════════════════
           RESEÑAS
       ══════════════════════════════════════════ */}
       <section id="resenas" className="py-24 px-4 sm:px-6 bg-white border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
+        <Reveal className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
             <div>
               <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Testimonios</p>
@@ -397,11 +335,11 @@ export default async function HomePage() {
             </Link>
           </div>
           {resenas.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardCarousel slideClassName="w-[280px] sm:w-[320px]">
               {resenas.map(r => (
                 <ResenaCard key={r.id} nombre={r.nombre} vehiculo={r.vehiculo} calificacion={r.calificacion} comentario={r.comentario} fecha={r.fecha} />
               ))}
-            </div>
+            </CardCarousel>
           ) : (
             <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-16 text-center">
               <Star className="h-10 w-10 text-gray-300 mx-auto mb-4" />
@@ -411,14 +349,14 @@ export default async function HomePage() {
               </Link>
             </div>
           )}
-        </div>
+        </Reveal>
       </section>
 
       {/* ══════════════════════════════════════════
           NOSOTROS
       ══════════════════════════════════════════ */}
       <section id="nosotros" className="py-24 px-4 sm:px-6 bg-gray-50 border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
+        <Reveal className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
 
             {/* Foto + stats */}
@@ -447,7 +385,7 @@ export default async function HomePage() {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {[
                   { valor: '15+', etiqueta: 'Años de operación' },
-                  { valor: '100+', etiqueta: 'Vehículos por mes' },
+                  { valor: '100+', etiqueta: 'Autos por mes' },
                   { valor: '6', etiqueta: 'Especialidades' },
                   { valor: '4.8★', etiqueta: 'Calificación promedio' },
                 ].map(stat => (
@@ -464,8 +402,8 @@ export default async function HomePage() {
               <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Quiénes somos</p>
               <h2 className="text-3xl font-bold text-gray-900 mb-5" style={{ fontFamily: 'Orbitron, sans-serif' }}>Sobre Nosotros</h2>
               <div className="space-y-4 text-gray-500 text-sm leading-relaxed mb-8">
-                <p>Kings Auto Diagnósticos es una cadena de centros de diagnóstico y reparación automotriz innovadores, que combina tecnología de punta con un servicio al cliente de clase mundial — diferenciándonos de cualquier taller existente en el país.</p>
-                <p>Contamos con un sistema digital de seguimiento que permite a nuestros clientes saber exactamente en qué fase está su vehículo, en tiempo real, desde su teléfono.</p>
+                <p>Kings Auto Diagnósticos es una cadena de centros de diagnóstico y reparación automotriz innovadores, que combina tecnología de punta con un servicio al cliente de clase mundial.</p>
+                <p>Contamos con un sistema digital de seguimiento que permite a nuestros clientes saber exactamente en qué fase está su auto, en tiempo real, desde su teléfono.</p>
               </div>
 
               {/* Diferenciadores */}
@@ -482,7 +420,7 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       {/* ══════════════════════════════════════════
@@ -490,7 +428,7 @@ export default async function HomePage() {
       ══════════════════════════════════════════ */}
       {blogPosts.length > 0 && (
         <section id="blog" className="py-24 px-4 sm:px-6 bg-white border-t border-gray-100 scroll-mt-16">
-          <div className="max-w-6xl mx-auto">
+          <Reveal className="max-w-6xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-12">
               <div>
                 <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Artículos</p>
@@ -528,7 +466,7 @@ export default async function HomePage() {
                 </Link>
               ))}
             </div>
-          </div>
+          </Reveal>
         </section>
       )}
 
@@ -536,7 +474,7 @@ export default async function HomePage() {
           CONTACTO
       ══════════════════════════════════════════ */}
       <section id="contacto" className="py-24 px-4 sm:px-6 bg-gray-50 border-t border-gray-100 scroll-mt-16">
-        <div className="max-w-6xl mx-auto">
+        <Reveal className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Encuéntranos</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Orbitron, sans-serif' }}>Visítanos</h2>
@@ -630,7 +568,7 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
     </div>
   )
