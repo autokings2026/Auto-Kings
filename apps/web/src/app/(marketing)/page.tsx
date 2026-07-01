@@ -134,7 +134,7 @@ export default async function HomePage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
               Kings Auto Diagnósticos
               <span className="block text-[#00d4e8]">Ingeniería Aplicada</span>
-              a tu Auto
+              a tu Vehículo
             </h1>
             <p className="text-base sm:text-lg text-white/75 leading-relaxed">
               Kings Auto Diagnósticos es un centro de servicio de diagnóstico y reparación automotriz. Nos especializamos en sistemas de diagnósticos eléctricos y electrónicos utilizando equipo de última generación. Nuestras reparaciones son realizadas de acuerdo con las especificaciones de los fabricantes.
@@ -275,8 +275,8 @@ export default async function HomePage() {
               <div className="relative z-10 flex flex-col h-full">
                 <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>07.</span>
                 <Search className="h-8 w-8 text-[#00d4e8] mt-3" />
-                <h3 className="text-lg font-bold text-white mt-3">Asesoría de Compra</h3>
-                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">¿Pensando en comprar un vehículo usado? Te asesoramos con una inspección diagnóstica completa — revisamos el estado eléctrico, electrónico y mecánico para que tomes una decisión segura e informada.</p>
+                <h3 className="text-lg font-bold text-white mt-3">Asesoría en Compra</h3>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">¿Pensando en comprar un vehículo usado? Te asesoramos con una inspección y diagnóstico completo — evaluamos y certificamos el estado eléctrico, electrónico y mecánico para que tomes una decisión segura.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
                   Agendar <ChevronRight className="h-3 w-3" />
                 </Link>
@@ -422,8 +422,7 @@ export default async function HomePage() {
               {/* Stats flotantes */}
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {[
-                  { valor: '15+', etiqueta: 'Años de operación' },
-                  { valor: '100+', etiqueta: 'Vehículos por mes' },
+                  { valor: '15+', etiqueta: 'Años de experiencia' },
                   { valor: '7', etiqueta: 'Especialidades' },
                   { valor: '4.8★', etiqueta: 'Calificación promedio' },
                 ].map(stat => (
