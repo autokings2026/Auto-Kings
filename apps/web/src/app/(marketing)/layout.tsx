@@ -13,18 +13,19 @@ const orbitron = Orbitron({
 
 export const metadata: Metadata = {
   title: {
-    default: 'Kings Auto Diagnósticos | Cofradía, Cortés, Honduras',
+    default: 'Kings Auto Diagnósticos | Res. Montelimar, KM 24, Honduras',
     template: '%s | Kings Auto Diagnósticos',
   },
   description:
-    'Cadena de centros de diagnóstico y reparación automotriz en Cofradía, Cortés. Personal certificado por Ford, GM, Lear e IATF, ingeniería aplicada y seguimiento digital de tu vehículo en tiempo real.',
+    'Centro de diagnóstico y reparación automotriz en Res. Montelimar, KM 24 Carretera hacia Occidente, Honduras. Ingeniería aplicada, equipo de última generación y seguimiento digital de tu vehículo.',
   keywords: [
-    'taller mecánico Cofradía',
     'diagnóstico automotriz Honduras',
-    'taller Cortés Honduras',
-    'mecánico Cofradía',
+    'reparación eléctrica automotriz',
+    'calibración ADAS Honduras',
+    'asesoría compra vehículo usado',
     'Kings Auto',
-    'reparación autos Honduras',
+    'alineamiento balanceo Honduras',
+    'rectificación discos frenos',
   ],
   openGraph: {
     type: 'website',
@@ -38,20 +39,20 @@ const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'AutoRepair',
   name: 'Kings Auto Diagnósticos',
-  description: 'Centro de servicio automotriz con diagnóstico computarizado en Cofradía, Cortés, Honduras.',
+  description: 'Centro de diagnóstico y reparación automotriz con tecnología de punta en Res. Montelimar, KM 24 Carretera hacia Occidente, Honduras.',
   address: {
     '@type': 'PostalAddress',
-    addressLocality: 'Cofradía',
+    streetAddress: 'Res. Montelimar, KM 24 Carretera hacia Occidente',
     addressRegion: 'Cortés',
     addressCountry: 'HN',
   },
-  openingHours: ['Mo-Fr 07:00-18:00', 'Sa 08:00-14:00'],
+  openingHours: ['Mo-Fr 08:00-17:00', 'Sa 08:00-12:00'],
   priceRange: 'L.',
 }
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const config = await prisma.configuracionTaller.findFirst({
-    select: { whatsapp: true, telefono: true, direccion: true, email: true },
+    select: { whatsapp: true, telefono: true, direccion: true, email: true, horariosAtencion: true },
   })
 
   return (
@@ -69,6 +70,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
           direccion={config?.direccion}
           telefono={config?.telefono}
           email={config?.email}
+          horarios={config?.horariosAtencion}
         />
         <WAFloatButton
           numero={config?.whatsapp ?? ''}

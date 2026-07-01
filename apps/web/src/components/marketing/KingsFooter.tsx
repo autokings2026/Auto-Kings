@@ -3,38 +3,67 @@ import Image from 'next/image'
 import { MapPin, Phone, Mail, Clock } from 'lucide-react'
 
 const servicios = [
-  { label: 'Diagnóstico Computarizado', href: '/servicios#diagnostico' },
-  { label: 'Frenos y Suspensión', href: '/servicios#frenos' },
-  { label: 'Motor y Transmisión', href: '/servicios#motor' },
-  { label: 'Mantenimiento Preventivo', href: '/servicios#mantenimiento' },
-  { label: 'Eléctrico Automotriz', href: '/servicios#electrico' },
+  { label: 'Diagnóstico Eléctrico y Electrónico', href: '/#servicios' },
+  { label: 'Calibración de Radares', href: '/#servicios' },
+  { label: 'Mecánica Rápida', href: '/#servicios' },
+  { label: 'Cambio de Aceite', href: '/#servicios' },
+  { label: 'Alineamiento y Balanceo', href: '/#servicios' },
+  { label: 'Rectificación de Discos y Frenos', href: '/#servicios' },
+  { label: 'Asesoría de Compra', href: '/#servicios' },
 ]
 
 const navegacion = [
   { label: 'Inicio', href: '/' },
-  { label: 'Servicios', href: '/servicios' },
-  { label: 'Nosotros', href: '/nosotros' },
+  { label: 'Servicios', href: '/#servicios' },
+  { label: 'Nosotros', href: '/#nosotros' },
   { label: 'Galería', href: '/galeria' },
   { label: 'Reseñas', href: '/resenas' },
   { label: 'Blog', href: '/blog' },
   { label: 'Agendar Cita', href: '/reservar' },
+  { label: 'Contacto', href: '/#contacto' },
 ]
 
-const DEFAULT_DIRECCION = 'Cofradía, Cortés, Honduras'
-const DEFAULT_TELEFONO = '+504 9999-9999'
-const DEFAULT_EMAIL = 'info@kingsauto.hn'
+const DEFAULT_DIRECCION = 'Res. Montelimar, KM 24 Carretera hacia Occidente'
+const DEFAULT_TELEFONO = '+504 9977-8337'
+const DEFAULT_EMAIL = 'autokings2026@gmail.com'
+
+type HorarioDia = { dia: number; activo: boolean; apertura: string; cierre: string }
+
+const DEFAULT_HORARIOS: HorarioDia[] = [
+  { dia: 0, activo: false, apertura: '08:00', cierre: '17:00' },
+  { dia: 1, activo: true,  apertura: '08:00', cierre: '17:00' },
+  { dia: 2, activo: true,  apertura: '08:00', cierre: '17:00' },
+  { dia: 3, activo: true,  apertura: '08:00', cierre: '17:00' },
+  { dia: 4, activo: true,  apertura: '08:00', cierre: '17:00' },
+  { dia: 5, activo: true,  apertura: '08:00', cierre: '17:00' },
+  { dia: 6, activo: true,  apertura: '08:00', cierre: '12:00' },
+]
+
+function fmtHora(h: string): string {
+  const [hStr, m] = h.split(':')
+  const hNum = parseInt(hStr, 10)
+  return `${hNum > 12 ? hNum - 12 : hNum === 0 ? 12 : hNum}:${m} ${hNum < 12 ? 'am' : 'pm'}`
+}
 
 interface KingsFooterProps {
   direccion?: string | null
   telefono?: string | null
   email?: string | null
+  horarios?: unknown
 }
 
-export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
+export function KingsFooter({ direccion, telefono, email, horarios }: KingsFooterProps) {
   const direccionDisplay = direccion || DEFAULT_DIRECCION
   const telefonoDisplay = telefono || DEFAULT_TELEFONO
   const emailDisplay = email || DEFAULT_EMAIL
   const telHref = `tel:${(telefono || DEFAULT_TELEFONO).replace(/[^0-9+]/g, '')}`
+
+  const horariosData: HorarioDia[] = Array.isArray(horarios)
+    ? (horarios as HorarioDia[])
+    : DEFAULT_HORARIOS
+  const horLv  = horariosData.find(h => h.dia === 1)
+  const horSab = horariosData.find(h => h.dia === 6)
+  const horDom = horariosData.find(h => h.dia === 0)
 
   return (
     <footer className="bg-[#0f1a2e] text-white relative overflow-hidden">
@@ -55,7 +84,7 @@ export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
               </div>
             </Link>
             <p className="text-sm text-white/60 leading-relaxed mb-4">
-              Centro de servicio automotriz en Cofradía, Cortés. Diagnóstico computarizado con seguimiento digital de tu vehículo.
+              Centro de diagnóstico y reparación automotriz. Ingeniería aplicada a tu vehículo con tecnología de punta y seguimiento digital en tiempo real.
             </p>
             <div className="flex items-center gap-3">
               <a href="#" className="h-8 w-8 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center text-white/60 hover:text-[#00d4e8] hover:border-[#00d4e8]/30 transition-colors" aria-label="Facebook">
@@ -72,7 +101,7 @@ export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
             <h3 className="text-xs font-semibold uppercase tracking-widest text-[#00d4e8] mb-4">Servicios</h3>
             <ul className="space-y-2.5">
               {servicios.map(s => (
-                <li key={s.href}>
+                <li key={s.label}>
                   <Link href={s.href} className="text-sm text-white/60 hover:text-white transition-colors">{s.label}</Link>
                 </li>
               ))}
@@ -84,7 +113,7 @@ export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
             <h3 className="text-xs font-semibold uppercase tracking-widest text-[#00d4e8] mb-4">Navegación</h3>
             <ul className="space-y-2.5">
               {navegacion.map(n => (
-                <li key={n.href}>
+                <li key={n.href + n.label}>
                   <Link href={n.href} className="text-sm text-white/60 hover:text-white transition-colors">{n.label}</Link>
                 </li>
               ))}
@@ -110,9 +139,9 @@ export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
               <li className="flex items-start gap-2.5">
                 <Clock className="h-4 w-4 text-[#00d4e8] mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-white/60 space-y-0.5">
-                  <p>Lun–Vie: 7:00am – 6:00pm</p>
-                  <p>Sáb: 8:00am – 2:00pm</p>
-                  <p>Dom: Cerrado</p>
+                  {horLv?.activo && <p>Lun–Vie: {fmtHora(horLv.apertura)} – {fmtHora(horLv.cierre)}</p>}
+                  <p>Sáb: {horSab?.activo ? `${fmtHora(horSab.apertura)} – ${fmtHora(horSab.cierre)}` : 'Cerrado'}</p>
+                  <p>Dom: {horDom?.activo ? `${fmtHora(horDom.apertura)} – ${fmtHora(horDom.cierre)}` : 'Cerrado'}</p>
                 </div>
               </li>
             </ul>
@@ -121,7 +150,6 @@ export function KingsFooter({ direccion, telefono, email }: KingsFooterProps) {
 
         <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/30">© {new Date().getFullYear()} Kings Auto Diagnósticos. Todos los derechos reservados.</p>
-          <p className="text-xs text-white/30">Desarrollado con ❤️ en Honduras</p>
         </div>
       </div>
     </footer>

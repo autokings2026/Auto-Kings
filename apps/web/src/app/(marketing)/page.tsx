@@ -4,7 +4,7 @@ import Image from 'next/image'
 import {
   ChevronRight, Wrench, Cpu, Radar, CircleDot,
   Droplet, Disc, MapPin, Phone, Clock, Award, BookOpen,
-  ShieldCheck, Calendar, Star,
+  ShieldCheck, Calendar, Star, Search,
 } from 'lucide-react'
 import { prisma } from '@/lib/prisma'
 import { SeguimientoWidget } from '@/components/marketing/SeguimientoWidget'
@@ -30,6 +30,7 @@ const PHOTOS = {
   taller: 'https://images.unsplash.com/photo-1643700973089-baa86a1ab9ee?w=1200&q=80&auto=format&fit=crop',
   elevador: 'https://images.unsplash.com/photo-1633863507928-9269584c50b0?w=1920&q=80&auto=format&fit=crop',
   tablero: 'https://images.unsplash.com/photo-1777286644467-2f2324150d9c?w=1920&q=80&auto=format&fit=crop',
+  asesoria: 'https://images.unsplash.com/photo-1727893467393-24bc37e8a117?w=800&q=80&auto=format&fit=crop',
 }
 
 // Hero — vehículos de alto lujo + equipo de diagnóstico (Unsplash, uso libre)
@@ -43,12 +44,12 @@ const HERO_PHOTOS = [
 
 const DIFERENCIADORES = [
   { icono: Award, titulo: 'Personal Certificado', descripcion: 'Entrenado y certificado por compañías líderes de la industria automotriz: Lear, Ford, General Motors, IATF y más.' },
-  { icono: Cpu, titulo: 'Ingeniería Aplicada', descripcion: 'Un concepto de ingeniería aplicada a tu auto, en lugar de taller tradicional.' },
-  { icono: BookOpen, titulo: 'Manuales de Fábrica', descripcion: 'Acceso a los manuales de diagnóstico y reparación originales de todos los fabricantes.' },
+  { icono: Cpu, titulo: 'Ingeniería Aplicada a tu Vehículo', descripcion: 'Nuestros procedimientos y procesos de reparación están basados en los principios de ingeniería del fabricante.' },
+  { icono: BookOpen, titulo: 'Manuales de Fábrica', descripcion: 'Acceso a los manuales de diagnóstico y reparación oficiales de todos los fabricantes, lo cual garantiza que tu vehículo será restaurado de acuerdo a los requerimientos del fabricante.' },
   { icono: ShieldCheck, titulo: 'Control de Calidad', descripcion: 'Validación y control de calidad en cada reparación: garantizamos un trabajo certificado.' },
 ]
 
-const DEFAULT_DIRECCION = 'Cofradía, Cortés, Honduras'
+const DEFAULT_DIRECCION = 'Res. Montelimar, KM 24 Carretera hacia Occidente'
 const DEFAULT_TELEFONO = '+504 9999-9999'
 const DEFAULT_WHATSAPP = '50499999999'
 
@@ -73,7 +74,7 @@ export default async function HomePage() {
       select: { id: true, titulo: true, slug: true, extracto: true, categoria: true, imagenUrl: true, createdAt: true },
     }),
     prisma.configuracionTaller.findFirst({
-      select: { direccion: true, telefono: true, whatsapp: true },
+      select: { direccion: true, telefono: true, whatsapp: true, horariosAtencion: true },
     }),
   ])
 
@@ -81,6 +82,28 @@ export default async function HomePage() {
   const telefonoDisplay = config?.telefono || DEFAULT_TELEFONO
   const waNumero = (config?.whatsapp || DEFAULT_WHATSAPP).replace(/[^0-9]/g, '')
   const telHref = `tel:${(config?.telefono || DEFAULT_TELEFONO).replace(/[^0-9+]/g, '')}`
+
+  type HorarioDia = { dia: number; activo: boolean; apertura: string; cierre: string }
+  const DEFAULT_HORARIOS: HorarioDia[] = [
+    { dia: 0, activo: false, apertura: '08:00', cierre: '17:00' },
+    { dia: 1, activo: true,  apertura: '08:00', cierre: '17:00' },
+    { dia: 2, activo: true,  apertura: '08:00', cierre: '17:00' },
+    { dia: 3, activo: true,  apertura: '08:00', cierre: '17:00' },
+    { dia: 4, activo: true,  apertura: '08:00', cierre: '17:00' },
+    { dia: 5, activo: true,  apertura: '08:00', cierre: '17:00' },
+    { dia: 6, activo: true,  apertura: '08:00', cierre: '12:00' },
+  ]
+  const horarios: HorarioDia[] = Array.isArray(config?.horariosAtencion)
+    ? (config.horariosAtencion as HorarioDia[])
+    : DEFAULT_HORARIOS
+  const fmtHora = (h: string) => {
+    const [hStr, m] = h.split(':')
+    const hNum = parseInt(hStr, 10)
+    return `${hNum > 12 ? hNum - 12 : hNum === 0 ? 12 : hNum}:${m} ${hNum < 12 ? 'am' : 'pm'}`
+  }
+  const horLv  = horarios.find(h => h.dia === 1)
+  const horSab = horarios.find(h => h.dia === 6)
+  const horDom = horarios.find(h => h.dia === 0)
 
   const resenas = resenasRaw.map(r => ({
     id: r.id,
@@ -109,12 +132,12 @@ export default async function HomePage() {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full pb-12 sm:pb-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-              Kings Auto Diagnóstico
+              Kings Auto Diagnósticos
               <span className="block text-[#00d4e8]">Ingeniería Aplicada</span>
               a tu Auto
             </h1>
             <p className="text-base sm:text-lg text-white/75 leading-relaxed">
-              Kings Auto Diagnósticos es un centro de servicio de diagnóstico y reparación automotriz con un solo método: tecnología aplicada. No adivinamos, no probamos. Escaneamos, analizamos y reparamos con tecnología que no falla.
+              Kings Auto Diagnósticos es un centro de servicio de diagnóstico y reparación automotriz. Nos especializamos en sistemas de diagnósticos eléctricos y electrónicos utilizando equipo de última generación. Nuestras reparaciones son realizadas de acuerdo con las especificaciones de los fabricantes.
             </p>
           </div>
         </div>
@@ -137,13 +160,13 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* BENTO */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-auto">
+          {/* BENTO — grid 3 cols: 01 ocupa 2×3, 02-07 son 1×1 simétricas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
 
-            {/* 01. DIAGNÓSTICO ELÉCTRICO/ELECTRÓNICO + PROGRAMACIÓN — grande, 2 cols × 2 rows */}
-            <div className="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[320px] flex flex-col justify-between p-8 group cursor-default">
+            {/* 01. DIAGNÓSTICO ELÉCTRICO Y ELECTRÓNICO — 2×3, el más grande */}
+            <div className="sm:col-span-2 md:col-span-2 md:row-span-3 relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[320px] flex flex-col justify-between p-8 group cursor-default">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.diagnostico} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500 scale-105 group-hover:scale-100" />
+              <img src={PHOTOS.diagnostico} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10">
                 <span className="text-6xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>01.</span>
@@ -154,95 +177,110 @@ export default async function HomePage() {
                   Diagnóstico Eléctrico<br />y Electrónico
                 </h3>
                 <p className="text-white/60 text-sm mt-3 leading-relaxed max-w-sm">
-                  Reparación de sistemas eléctricos y electrónicos, más programación de módulos y llaves con equipo especializado.
+                  Reparación de sistemas eléctricos y electrónicos, programación de módulos utilizando el software y licencia del fabricante. Además, ofrecemos solución a tus necesidades de llaves para tu vehículo.
                 </p>
-                <ul className="mt-4 space-y-1.5">
-                  {['Diagnóstico y reparación de sistemas eléctricos y electrónicos', 'Programación de módulos', 'Programación de llaves'].map(i => (
-                    <li key={i} className="flex items-center gap-2 text-xs text-white/50">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#00d4e8] flex-shrink-0" />
-                      {i}
-                    </li>
-                  ))}
-                </ul>
               </div>
               <div className="relative z-10 mt-6">
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-sm hover:bg-[#00bcd4] transition-colors">
-                  Agendar diagnóstico <ChevronRight className="h-4 w-4" />
+                  Agendar <ChevronRight className="h-4 w-4" />
                 </Link>
               </div>
             </div>
 
-            {/* 02. CALIBRACIÓN DE RADARES — 1 col, foto fondo */}
-            <div className="relative overflow-hidden rounded-2xl bg-white border border-gray-200 min-h-[200px] flex flex-col p-6 group hover:border-[#1e3a8a]/30 hover:shadow-md transition-all">
+            {/* 02. CALIBRACIÓN DE RADARES — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.radares} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-15 transition-opacity" />
+              <img src={PHOTOS.radares} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-gray-200 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>02.</span>
-                <Radar className="h-8 w-8 text-[#1e3a8a] mt-3" />
-                <h3 className="text-lg font-bold text-gray-900 mt-3">Calibración de Radares</h3>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed flex-1">Sensores y cámaras de los sistemas de asistencia (ADAS).</p>
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>02.</span>
+                <Radar className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <h3 className="text-lg font-bold text-white mt-3">Calibración de Radares</h3>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Ofrecemos el servicio más completo y confiable en diagnóstico, instalación y calibración de todos los sensores, radares y cámaras de los sistemas de asistencia ADAS.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
 
-            {/* 03. MECÁNICA RÁPIDA — 1 col, fondo oscuro + foto */}
-            <div className="relative overflow-hidden rounded-2xl bg-gray-800 min-h-[200px] flex flex-col p-6 group">
+            {/* 03. MECÁNICA RÁPIDA — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.mecanica} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity" />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 to-transparent" />
+              <img src={PHOTOS.mecanica} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/10 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>03.</span>
-                <Wrench className="h-8 w-8 text-white mt-3" />
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>03.</span>
+                <Wrench className="h-8 w-8 text-[#00d4e8] mt-3" />
                 <h3 className="text-lg font-bold text-white mt-3">Mecánica Rápida</h3>
-                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Reparaciones y mantenimientos generales con atención ágil.</p>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Reparaciones y mantenimientos generales con atención ágil y confiable. Todas nuestras reparaciones son realizadas utilizando las especificaciones del fabricante.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
 
-            {/* 04. ALINEAMIENTO Y BALANCEO — 2 cols, fondo azul claro + foto lateral */}
-            <div className="md:col-span-2 relative overflow-hidden rounded-2xl bg-[#eef4ff] border border-[#1e3a8a]/10 min-h-[220px] flex flex-col p-8 group hover:border-[#1e3a8a]/25 hover:shadow-md transition-all">
+            {/* 04. CAMBIO DE ACEITE — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.alineacion} alt="" aria-hidden className="absolute right-0 top-0 h-full w-2/5 object-cover opacity-30 group-hover:opacity-40 transition-opacity" />
-              <div className="absolute right-0 inset-y-0 w-2/5 bg-gradient-to-l from-transparent via-[#eef4ff]/30 to-[#eef4ff]" />
-              <div className="relative z-10">
-                <span className="text-5xl font-bold text-[#1e3a8a]/10 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>04.</span>
-                <CircleDot className="h-10 w-10 text-[#1e3a8a] mt-4" />
-                <h3 className="text-2xl font-bold text-gray-900 mt-3">Alineamiento y Balanceo</h3>
-                <p className="text-sm text-gray-600 mt-2 max-w-xs leading-relaxed">
-                  Alineación computarizada y balanceo de llantas para un manejo seguro y mayor vida útil de tus neumáticos.
-                </p>
-              </div>
-            </div>
-
-            {/* 05. CAMBIO DE ACEITE — 1 col, fondo oscuro cian */}
-            <div className="relative overflow-hidden rounded-2xl min-h-[180px] flex flex-col p-6 bg-[#0f1a2e] group">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.aceite} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-25 group-hover:opacity-35 transition-opacity" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/50 to-[#0f1a2e]/20" />
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#00d4e8]/15 blur-3xl pointer-events-none" />
+              <img src={PHOTOS.aceite} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-[#00d4e8]/15 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>05.</span>
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>04.</span>
                 <Droplet className="h-8 w-8 text-[#00d4e8] mt-3" />
                 <h3 className="text-lg font-bold text-white mt-3">Cambio de Aceite</h3>
-                <p className="text-xs text-white/50 mt-1 leading-relaxed flex-1">Aceite y filtro con productos de calidad garantizada.</p>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Tu vehículo merece un mantenimiento preventivo de calidad. En Kings realizamos el cambio de aceite de manera profesional, cuidando cada detalle.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
 
-            {/* 06. RECTIFICACIÓN DE DISCOS Y FRENOS — ancho completo, gradiente + foto */}
-            <div className="md:col-span-3 relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#0f3a6b] min-h-[100px] flex items-center gap-6 p-6 sm:p-8">
+            {/* 05. ALINEAMIENTO Y BALANCEO — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={PHOTOS.frenos} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-10" />
-              <div className="relative z-10 flex items-center gap-5 flex-1">
-                <div className="h-12 w-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <Disc className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-white/30 block" style={{ fontFamily: 'Orbitron, sans-serif' }}>06.</span>
-                  <h3 className="text-lg font-bold text-white">Rectificación de Discos y Frenos</h3>
-                  <p className="text-sm text-white/60">Rectificación de discos y reparación del sistema de frenos.</p>
-                </div>
+              <img src={PHOTOS.alineacion} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
+              <div className="relative z-10 flex flex-col h-full">
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>05.</span>
+                <CircleDot className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <h3 className="text-lg font-bold text-white mt-3">Alineamiento y Balanceo</h3>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Nuestro servicio de alineamiento se realiza utilizando equipo con tecnología de punta, garantizando una conducción segura y mayor vida útil de tus neumáticos.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
-              <Link href="/reservar" className="relative z-10 flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-sm hover:bg-[#00bcd4] transition-colors flex-shrink-0 hidden sm:flex">
-                Agendar <ChevronRight className="h-4 w-4" />
-              </Link>
+            </div>
+
+            {/* 06. RECTIFICACIÓN DE DISCOS Y FRENOS — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={PHOTOS.frenos} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
+              <div className="relative z-10 flex flex-col h-full">
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>06.</span>
+                <Disc className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <h3 className="text-lg font-bold text-white mt-3">Rectificación de Discos y Frenos</h3>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Servicio ofrecido al público general, incluyendo a talleres, utilizando equipo de última generación para rectificado de discos y tambores.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+
+            {/* 07. ASESORÍA DE COMPRA — 1×1 */}
+            <div className="relative overflow-hidden rounded-2xl bg-[#0f1a2e] min-h-[200px] flex flex-col p-6 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={PHOTOS.asesoria} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
+              <div className="relative z-10 flex flex-col h-full">
+                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>07.</span>
+                <Search className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <h3 className="text-lg font-bold text-white mt-3">Asesoría de Compra</h3>
+                <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">¿Pensando en comprar un vehículo usado? Te asesoramos con una inspección diagnóstica completa — revisamos el estado eléctrico, electrónico y mecánico para que tomes una decisión segura e informada.</p>
+                <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
+                  Agendar <ChevronRight className="h-3 w-3" />
+                </Link>
+              </div>
             </div>
 
           </div>
@@ -262,7 +300,7 @@ export default async function HomePage() {
         <Reveal className="max-w-3xl mx-auto relative z-10">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Seguimiento en tiempo real</p>
-            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>¿Cómo va tu auto?</h2>
+            <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg" style={{ fontFamily: 'Orbitron, sans-serif' }}>¿Cómo va tu vehículo?</h2>
             <p className="text-white/60 text-sm leading-relaxed">Ingresa la placa para conocer el estado de tu cita o el avance de tu orden de trabajo.</p>
           </div>
 
@@ -376,7 +414,7 @@ export default async function HomePage() {
                     </div>
                     <div>
                       <p className="text-white text-xs font-bold" style={{ fontFamily: 'Orbitron, sans-serif' }}>Kings Auto Diagnósticos</p>
-                      <p className="text-white/60 text-[10px]">Cofradía, Cortés, Honduras</p>
+                      <p className="text-white/60 text-[10px]">{direccionDisplay}</p>
                     </div>
                   </div>
                 </div>
@@ -385,8 +423,8 @@ export default async function HomePage() {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 {[
                   { valor: '15+', etiqueta: 'Años de operación' },
-                  { valor: '100+', etiqueta: 'Autos por mes' },
-                  { valor: '6', etiqueta: 'Especialidades' },
+                  { valor: '100+', etiqueta: 'Vehículos por mes' },
+                  { valor: '7', etiqueta: 'Especialidades' },
                   { valor: '4.8★', etiqueta: 'Calificación promedio' },
                 ].map(stat => (
                   <div key={stat.etiqueta} className="rounded-xl border border-gray-200 bg-white p-4 text-center shadow-sm">
@@ -402,8 +440,8 @@ export default async function HomePage() {
               <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Quiénes somos</p>
               <h2 className="text-3xl font-bold text-gray-900 mb-5" style={{ fontFamily: 'Orbitron, sans-serif' }}>Sobre Nosotros</h2>
               <div className="space-y-4 text-gray-500 text-sm leading-relaxed mb-8">
-                <p>Kings Auto Diagnósticos es una cadena de centros de diagnóstico y reparación automotriz innovadores, que combina tecnología de punta con un servicio al cliente de clase mundial.</p>
-                <p>Contamos con un sistema digital de seguimiento que permite a nuestros clientes saber exactamente en qué fase está su auto, en tiempo real, desde su teléfono.</p>
+                <p>Kings Auto Diagnósticos es un centro de diagnóstico y reparación automotriz innovador, que combina tecnología de punta con un servicio al cliente de clase mundial. Utilizamos las metodologías de solución de problemas aplicadas por los fabricantes (Six Sigma, Red X, 8D's, etc.).</p>
+                <p>Contamos con un sistema digital de seguimiento desde su móvil que permite a nuestros clientes saber exactamente en qué etapa se encuentra su vehículo durante su permanencia en nuestras instalaciones.</p>
               </div>
 
               {/* Diferenciadores */}
@@ -478,7 +516,7 @@ export default async function HomePage() {
           <div className="text-center mb-14">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Encuéntranos</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-3" style={{ fontFamily: 'Orbitron, sans-serif' }}>Visítanos</h2>
-            <p className="text-gray-500 text-sm">Estamos en {direccionDisplay}. Agenda en línea o llámanos.</p>
+            <p className="text-gray-500 text-sm">Estamos ubicados en {direccionDisplay}. Agenda en línea o llámanos.</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
@@ -497,9 +535,11 @@ export default async function HomePage() {
                     <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
                     {label === 'Horario' ? (
                       <div className="text-sm space-y-0.5">
-                        <p className="text-gray-700">Lun – Vie: <span className="text-gray-500">7:00 am – 6:00 pm</span></p>
-                        <p className="text-gray-700">Sábado: <span className="text-gray-500">8:00 am – 2:00 pm</span></p>
-                        <p className="text-gray-700">Domingo: <span className="text-red-500">Cerrado</span></p>
+                        {horLv?.activo && (
+                          <p className="text-gray-700">Lun – Vie: <span className="text-gray-500">{fmtHora(horLv.apertura)} – {fmtHora(horLv.cierre)}</span></p>
+                        )}
+                        <p className="text-gray-700">Sábado:{' '}{horSab?.activo ? <span className="text-gray-500">{fmtHora(horSab.apertura)} – {fmtHora(horSab.cierre)}</span> : <span className="text-red-500">Cerrado</span>}</p>
+                        <p className="text-gray-700">Domingo:{' '}{horDom?.activo ? <span className="text-gray-500">{fmtHora(horDom.apertura)} – {fmtHora(horDom.cierre)}</span> : <span className="text-red-500">Cerrado</span>}</p>
                       </div>
                     ) : href ? (
                       <a href={href} className="text-gray-800 font-medium hover:text-[#1e3a8a] transition-colors text-sm">{content}</a>
