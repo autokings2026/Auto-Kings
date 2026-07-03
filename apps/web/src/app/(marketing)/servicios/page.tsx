@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ChevronRight, Cpu, Radar, Wrench, CircleDot, Droplet, Disc, CheckCircle2 } from 'lucide-react'
+import { ChevronRight, Cpu, Wrench, CircleDot, CheckCircle2 } from 'lucide-react'
+import { OilCanIcon, BrakeWarningIcon, AdasRadarIcon } from '@/components/marketing/DashboardIcons'
 
 export const metadata: Metadata = {
   title: 'Servicios',
@@ -24,7 +25,7 @@ const SERVICIOS = [
   },
   {
     id: 'radares',
-    icono: Radar,
+    icono: AdasRadarIcon,
     nombre: 'Calibración de Radares',
     descripcion:
       'Calibramos los sensores y cámaras de los sistemas de asistencia al conductor (ADAS) para que funcionen con la precisión de fábrica tras un cambio de parabrisas, alineación o reparación.',
@@ -60,7 +61,7 @@ const SERVICIOS = [
   },
   {
     id: 'aceite',
-    icono: Droplet,
+    icono: OilCanIcon,
     nombre: 'Cambio de Aceite',
     descripcion:
       'Cambio de aceite y filtro con productos de calidad, siguiendo las especificaciones del fabricante de tu vehículo.',
@@ -72,7 +73,7 @@ const SERVICIOS = [
   },
   {
     id: 'frenos',
-    icono: Disc,
+    icono: BrakeWarningIcon,
     nombre: 'Rectificación de Discos y Frenos',
     descripcion:
       'Rectificación de discos y reparación completa del sistema de frenos para garantizar tu seguridad en cada frenada.',

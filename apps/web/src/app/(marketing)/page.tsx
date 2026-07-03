@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
-  ChevronRight, Wrench, Cpu, Radar, CircleDot,
-  Droplet, Disc, MapPin, Phone, Clock, Award, BookOpen,
+  ChevronRight, Wrench, Cpu, CircleDot,
+  MapPin, Phone, Clock, Award, BookOpen,
   ShieldCheck, Calendar, Star, Search,
 } from 'lucide-react'
+import { OilCanIcon, BrakeWarningIcon, AdasRadarIcon } from '@/components/marketing/DashboardIcons'
 import { prisma } from '@/lib/prisma'
 import { SeguimientoWidget } from '@/components/marketing/SeguimientoWidget'
 import { GaleriaCarousel } from '@/components/marketing/GaleriaCarousel'
@@ -194,7 +195,7 @@ export default async function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
                 <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>02.</span>
-                <Radar className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <AdasRadarIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
                 <h3 className="text-lg font-bold text-white mt-3">Calibración de Radares</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Ofrecemos el servicio más completo y confiable en diagnóstico, instalación y calibración de todos los sensores, radares y cámaras de los sistemas de asistencia ADAS.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -226,7 +227,7 @@ export default async function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
                 <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>04.</span>
-                <Droplet className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <OilCanIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
                 <h3 className="text-lg font-bold text-white mt-3">Cambio de Aceite</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Tu vehículo merece un mantenimiento preventivo de calidad. En Kings realizamos el cambio de aceite de manera profesional, cuidando cada detalle.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -258,7 +259,7 @@ export default async function HomePage() {
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
                 <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>06.</span>
-                <Disc className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <BrakeWarningIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
                 <h3 className="text-lg font-bold text-white mt-3">Rectificación de Discos y Frenos</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Servicio ofrecido al público general, incluyendo a talleres, utilizando equipo de última generación para rectificado de discos y tambores.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">

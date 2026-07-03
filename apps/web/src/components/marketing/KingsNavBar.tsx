@@ -153,6 +153,7 @@ export function KingsNavBar({ telefono, whatsapp }: KingsNavBarProps) {
               <Link
                 key={l.href}
                 href={l.href}
+                onClick={() => setOpen(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
               >
                 <ChevronRight className="h-3.5 w-3.5 flex-shrink-0 opacity-40" />
