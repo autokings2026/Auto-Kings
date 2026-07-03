@@ -138,7 +138,9 @@ export default async function HomePage() {
               a tu Vehículo
             </h1>
             <p className="text-base sm:text-lg text-white/75 leading-relaxed">
-              Kings Auto Diagnósticos es un centro de servicio de diagnóstico y reparación automotriz. Nos especializamos en sistemas de diagnósticos eléctricos y electrónicos utilizando equipo de última generación. Nuestras reparaciones son realizadas de acuerdo con las especificaciones de los fabricantes.
+              Kings Auto Diagnósticos es un centro especializado en diagnóstico y reparación automotriz. Contamos con amplia experiencia en la evaluación, diagnóstico y solución de fallas en sistemas eléctricos y electrónicos de vehículos, utilizando tecnología de última generación y herramientas de diagnóstico avanzadas.
+              <br /><br />
+              Todos nuestros procesos de reparación se realizan siguiendo los procedimientos y especificaciones establecidos por los fabricantes, garantizando un servicio confiable, preciso y de alta calidad.
             </p>
           </div>
         </div>
@@ -170,8 +172,7 @@ export default async function HomePage() {
               <img src={PHOTOS.diagnostico} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10">
-                <span className="text-6xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>01.</span>
-                <div className="mt-4 h-12 w-12 rounded-xl bg-[#00d4e8]/15 border border-[#00d4e8]/30 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-[#00d4e8]/15 border border-[#00d4e8]/30 flex items-center justify-center">
                   <Cpu className="h-6 w-6 text-[#00d4e8]" />
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mt-5 leading-tight" style={{ fontFamily: 'Orbitron, sans-serif' }}>
@@ -194,8 +195,7 @@ export default async function HomePage() {
               <img src={PHOTOS.radares} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>02.</span>
-                <AdasRadarIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <AdasRadarIcon className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Calibración de Radares</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Ofrecemos el servicio más completo y confiable en diagnóstico, instalación y calibración de todos los sensores, radares y cámaras de los sistemas de asistencia ADAS.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -210,8 +210,7 @@ export default async function HomePage() {
               <img src={PHOTOS.mecanica} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>03.</span>
-                <Wrench className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <Wrench className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Mecánica Rápida</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Reparaciones y mantenimientos generales con atención ágil y confiable. Todas nuestras reparaciones son realizadas utilizando las especificaciones del fabricante.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -226,8 +225,7 @@ export default async function HomePage() {
               <img src={PHOTOS.aceite} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>04.</span>
-                <OilCanIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <OilCanIcon className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Cambio de Aceite</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Tu vehículo merece un mantenimiento preventivo de calidad. En Kings realizamos el cambio de aceite de manera profesional, cuidando cada detalle.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -242,8 +240,7 @@ export default async function HomePage() {
               <img src={PHOTOS.alineacion} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>05.</span>
-                <CircleDot className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <CircleDot className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Alineamiento y Balanceo</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Nuestro servicio de alineamiento se realiza utilizando equipo con tecnología de punta, garantizando una conducción segura y mayor vida útil de tus neumáticos.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -258,8 +255,7 @@ export default async function HomePage() {
               <img src={PHOTOS.frenos} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>06.</span>
-                <BrakeWarningIcon className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <BrakeWarningIcon className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Rectificación de Discos y Frenos</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">Servicio ofrecido al público general, incluyendo a talleres, utilizando equipo de última generación para rectificado de discos y tambores.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
@@ -274,8 +270,7 @@ export default async function HomePage() {
               <img src={PHOTOS.asesoria} alt="" aria-hidden className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0f1a2e]/90 via-[#0f1a2e]/40 to-transparent" />
               <div className="relative z-10 flex flex-col h-full">
-                <span className="text-4xl font-bold text-white/8 leading-none" style={{ fontFamily: 'Orbitron, sans-serif' }}>07.</span>
-                <Search className="h-8 w-8 text-[#00d4e8] mt-3" />
+                <Search className="h-8 w-8 text-[#00d4e8]" />
                 <h3 className="text-lg font-bold text-white mt-3">Asesoría en Compra</h3>
                 <p className="text-xs text-white/60 mt-1 leading-relaxed flex-1">¿Pensando en comprar un vehículo usado? Te asesoramos con una inspección y diagnóstico completo — evaluamos y certificamos el estado eléctrico, electrónico y mecánico para que tomes una decisión segura.</p>
                 <Link href="/reservar" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d4e8] text-[#0f1a2e] font-bold text-xs mt-4 hover:bg-[#00bcd4] transition-colors self-start">
