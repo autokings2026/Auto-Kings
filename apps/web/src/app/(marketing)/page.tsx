@@ -27,7 +27,7 @@ const PHOTOS = {
   mecanica: 'https://images.unsplash.com/photo-1615906655593-ad0386982a0f?w=800&q=80&auto=format&fit=crop',
   alineacion: 'https://images.unsplash.com/photo-1616788902258-138db56fe7e5?w=800&q=80&auto=format&fit=crop',
   aceite: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=800&q=80&auto=format&fit=crop',
-  frenos: 'https://images.unsplash.com/photo-1645445522156-9ac06bc7a767?w=1200&q=80&auto=format&fit=crop',
+  frenos: '/rectificacion-discos-frenos.jpg',
   taller: 'https://images.unsplash.com/photo-1643700973089-baa86a1ab9ee?w=1200&q=80&auto=format&fit=crop',
   elevador: 'https://images.unsplash.com/photo-1633863507928-9269584c50b0?w=1920&q=80&auto=format&fit=crop',
   tablero: 'https://images.unsplash.com/photo-1777286644467-2f2324150d9c?w=1920&q=80&auto=format&fit=crop',
