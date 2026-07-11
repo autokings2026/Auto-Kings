@@ -112,6 +112,55 @@ export async function createCita(dto: {
   }
 }
 
+// ── Crear cita manual (walk-in, sin reserva previa) ─────────────────────────────
+
+export async function createCitaManual(dto: {
+  nombre: string; email?: string; telefono: string
+  marcaId: string; modeloId: string; anio: number; placa: string
+  hora: string; comentarios?: string
+}) {
+  const [marca, modelo] = await Promise.all([
+    prisma.marca.findUnique({ where: { id: dto.marcaId } }),
+    prisma.modelo.findUnique({ where: { id: dto.modeloId } }),
+  ])
+  if (!marca) throw new Error('Marca no encontrada')
+  if (!modelo) throw new Error('Modelo no encontrado')
+
+  const cliente = await findOrCreateCliente({ nombre: dto.nombre, telefono: dto.telefono, email: dto.email })
+
+  const hoy = new Date()
+  const fechaHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
+
+  // Walk-in: el cliente ya está en el taller, no se valida contra los slots
+  // de agenda en línea y la cita queda confirmada de inmediato.
+  const cita = await prisma.cita.create({
+    data: {
+      clienteId: cliente.id,
+      marcaId: dto.marcaId,
+      modeloId: dto.modeloId,
+      anio: dto.anio,
+      placa: dto.placa.toUpperCase(),
+      fecha: fechaHoy,
+      hora: dto.hora,
+      comentarios: dto.comentarios,
+      estado: EstadoCita.CONFIRMADA,
+    },
+    include: { cliente: true, marca: true, modelo: true },
+  })
+
+  return {
+    id: cita.id,
+    mensaje: 'Cita registrada exitosamente',
+    detalle: {
+      nombre: cliente.nombre,
+      fecha: formatFecha(cita.fecha),
+      hora: formatHora(cita.hora),
+      vehiculo: `${marca.nombre} ${modelo.nombre} ${cita.anio}`,
+      placa: cita.placa,
+    },
+  }
+}
+
 // ── Listar / Detalle ──────────────────────────────────────────────────────────
 
 export async function findAllCitas(query: {

@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X, Lock } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X, Lock, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn, formatDate } from '@/lib/utils'
 import { EstadoCita } from '@kings/shared'
 import { ConvertOtModal } from './convert-ot-modal'
+import { NuevaCitaModal } from './nueva-cita-modal'
 
 const FALLBACK_WA =
   'Hola {{nombre_cliente}}, le notificamos que hemos recibido su vehículo {{marca}} {{modelo}} (placa {{placa}}) en nuestras instalaciones. Nuestro equipo ya está trabajando en el diagnóstico y le estaremos informando sobre el estado de su vehículo. Gracias por confiar en Kings Auto Diagnósticos. 🔧'
@@ -159,6 +160,7 @@ export function CitasTable() {
   const [page, setPage] = useState(1)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [convertModal, setConvertModal] = useState<{ citaId: string; clienteNombre: string; vehiculo: string } | null>(null)
+  const [nuevaCitaModal, setNuevaCitaModal] = useState(false)
   const [waTemplate, setWaTemplate] = useState<string>(FALLBACK_WA)
   const [waModal, setWaModal] = useState<Cita | null>(null)
 
@@ -277,6 +279,11 @@ export function CitasTable() {
 
         <Button variant="outline" size="sm" onClick={fetchCitas} className="shrink-0">
           <RefreshCw className="h-4 w-4" />
+        </Button>
+
+        <Button variant="primary" size="sm" onClick={() => setNuevaCitaModal(true)} className="shrink-0 gap-1.5">
+          <UserPlus className="h-4 w-4" />
+          Cliente sin cita
         </Button>
       </div>
 
@@ -436,6 +443,12 @@ export function CitasTable() {
           clienteNombre={convertModal.clienteNombre}
           vehiculo={convertModal.vehiculo}
           onClose={() => { setConvertModal(null); fetchCitas() }}
+        />
+      )}
+      {nuevaCitaModal && (
+        <NuevaCitaModal
+          onClose={() => setNuevaCitaModal(false)}
+          onCreated={() => { setNuevaCitaModal(false); fetchCitas() }}
         />
       )}
     </div>
