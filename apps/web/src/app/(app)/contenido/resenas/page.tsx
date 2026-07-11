@@ -59,7 +59,7 @@ export default function AdminResenasPage() {
   const filtradas = filtro === 'TODAS' ? resenas : resenas.filter(r => r.estado === filtro)
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Reseñas de Clientes</h1>
         <p className="text-sm text-muted-foreground mt-1">
@@ -106,8 +106,8 @@ export default function AdminResenasPage() {
           {filtradas.map(r => {
             const cfg = ESTADO_CONFIG[r.estado]
             return (
-              <div key={r.id} className="rounded-xl border border-border bg-surface p-5">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div key={r.id} className="rounded-xl border border-border bg-surface p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <p className="font-semibold text-foreground text-sm">{r.nombre}</p>
@@ -131,18 +131,18 @@ export default function AdminResenasPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.class}`}>
+                  <div className="flex items-center justify-between gap-3 pt-3 sm:pt-0 mt-1 sm:mt-0 border-t border-border sm:border-t-0 sm:flex-col sm:items-end sm:flex-shrink-0">
+                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border shrink-0 ${cfg.class}`}>
                       <cfg.icon className="h-3 w-3" />
                       {cfg.label}
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
                       {r.estado !== 'APROBADA' && (
                         <button
                           onClick={() => cambiarEstado(r.id, 'APROBADA')}
                           disabled={actualizando === r.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 text-xs font-medium transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
                         >
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           Aprobar
@@ -152,7 +152,7 @@ export default function AdminResenasPage() {
                         <button
                           onClick={() => cambiarEstado(r.id, 'RECHAZADA')}
                           disabled={actualizando === r.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-colors disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 text-xs font-medium transition-colors disabled:opacity-50 whitespace-nowrap"
                         >
                           <XCircle className="h-3.5 w-3.5" />
                           Rechazar
@@ -160,7 +160,7 @@ export default function AdminResenasPage() {
                       )}
                       <button
                         onClick={() => eliminar(r.id)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors shrink-0"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
