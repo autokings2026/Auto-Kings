@@ -12,6 +12,7 @@ const orbitron = Orbitron({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.auto-kings.com'),
   title: {
     default: 'Kings Auto Diagnósticos | Res. Montelimar, KM 24, Honduras',
     template: '%s | Kings Auto Diagnósticos',

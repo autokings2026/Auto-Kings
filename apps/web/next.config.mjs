@@ -28,6 +28,17 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Dominio antiguo de Vercel → dominio propio (redirect permanente)
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'auto-kings-web.vercel.app' }],
+        destination: 'https://www.auto-kings.com/:path*',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 export default nextConfig
