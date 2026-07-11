@@ -25,7 +25,7 @@ const navegacion = [
 
 const DEFAULT_DIRECCION = 'Res. Montelimar, KM 24 Carretera hacia Occidente'
 const DEFAULT_TELEFONO = '+504 9977-8337'
-const DEFAULT_EMAIL = 'autokings2026@gmail.com'
+const DEFAULT_EMAIL = 'miltonreyes@auto-kings.com'
 
 type HorarioDia = { dia: number; activo: boolean; apertura: string; cierre: string }
 
