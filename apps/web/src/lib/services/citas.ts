@@ -83,20 +83,27 @@ export async function createCita(dto: {
     include: { cliente: true, marca: true, modelo: true },
   })
 
+  // El envío del email de confirmación no debe hacer fallar la creación de la
+  // cita (ej. credenciales de Gmail inválidas/expiradas) — la cita ya quedó
+  // guardada en la base de datos, así que un error de email solo se registra.
   if (cliente.email) {
-    const config = await prisma.configuracionTaller.findFirst()
-    await sendConfirmacionCita({
-      to: cliente.email,
-      nombre: cliente.nombre,
-      fecha: formatFecha(cita.fecha),
-      hora: formatHora(cita.hora),
-      marca: marca.nombre,
-      modelo: modelo.nombre,
-      anio: cita.anio,
-      placa: cita.placa ?? '',
-      telefonoTaller: config?.telefono ?? '',
-    })
-    await prisma.cita.update({ where: { id: cita.id }, data: { emailEnviado: true } }).catch(() => null)
+    try {
+      const config = await prisma.configuracionTaller.findFirst()
+      await sendConfirmacionCita({
+        to: cliente.email,
+        nombre: cliente.nombre,
+        fecha: formatFecha(cita.fecha),
+        hora: formatHora(cita.hora),
+        marca: marca.nombre,
+        modelo: modelo.nombre,
+        anio: cita.anio,
+        placa: cita.placa ?? '',
+        telefonoTaller: config?.telefono ?? '',
+      })
+      await prisma.cita.update({ where: { id: cita.id }, data: { emailEnviado: true } }).catch(() => null)
+    } catch (err) {
+      console.error('[Citas] La cita se creó pero el email de confirmación falló:', err)
+    }
   }
 
   return {

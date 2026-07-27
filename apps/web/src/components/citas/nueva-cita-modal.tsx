@@ -9,13 +9,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
+const ANIO_MAX = new Date().getFullYear() + 1
+
 const schema = z.object({
   nombre: z.string().min(2, 'Nombre muy corto'),
   telefono: z.string().min(8, 'Número inválido (mínimo 8 dígitos)'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   marcaId: z.string().min(1, 'Selecciona la marca'),
   modeloId: z.string().min(1, 'Selecciona el modelo'),
-  anio: z.coerce.number().min(2000).max(2026),
+  anio: z.coerce.number().min(2000).max(ANIO_MAX),
   placa: z.string().min(2, 'Placa inválida'),
   hora: z.string().regex(/^\d{2}:\d{2}$/, 'Selecciona una hora'),
   comentarios: z.string().optional(),
@@ -172,7 +174,7 @@ export function NuevaCitaModal({ onClose, onCreated }: Props) {
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-muted-foreground">Año *</Label>
-              <Input {...register('anio')} type="number" min={2000} max={2026} placeholder="2020" />
+              <Input {...register('anio')} type="number" min={2000} max={ANIO_MAX} placeholder="2020" />
               {errors.anio && <p className="text-xs text-red-400">{errors.anio.message}</p>}
             </div>
             <div className="space-y-1.5">

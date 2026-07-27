@@ -9,7 +9,7 @@ const CreateCitaManualSchema = z.object({
   telefono:    z.string().min(8),
   marcaId:     z.string(),
   modeloId:    z.string(),
-  anio:        z.number().int().min(2000).max(2030),
+  anio:        z.number().int().min(2000).max(new Date().getFullYear() + 2),
   placa:       z.string().min(2),
   hora:        z.string().regex(/^\d{2}:\d{2}$/),
   comentarios: z.string().optional(),

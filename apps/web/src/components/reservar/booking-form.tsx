@@ -21,13 +21,15 @@ import { cn } from '@/lib/utils'
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 
+const ANIO_MAX = new Date().getFullYear() + 1
+
 const schema = z.object({
   nombre: z.string().min(2, 'Nombre muy corto'),
   telefono: z.string().min(8, 'Número inválido (mínimo 8 dígitos)'),
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   marcaId: z.string().min(1, 'Selecciona la marca'),
   modeloId: z.string().min(1, 'Selecciona el modelo'),
-  anio: z.coerce.number().min(2000).max(2026),
+  anio: z.coerce.number().min(2000).max(ANIO_MAX),
   placa: z.string().min(2, 'Placa inválida'),
   fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Selecciona una fecha'),
   hora: z.string().regex(/^\d{2}:\d{2}$/, 'Selecciona una hora'),
@@ -321,7 +323,7 @@ export function BookingForm() {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Año *" error={errors.anio?.message}>
-            <Input {...register('anio')} type="number" min={2000} max={2026} placeholder="2020" />
+            <Input {...register('anio')} type="number" min={2000} max={ANIO_MAX} placeholder="2020" />
           </Field>
           <Field label="Placa *" error={errors.placa?.message}>
             <Input {...register('placa')} placeholder="AAA-1234" className="uppercase" />
