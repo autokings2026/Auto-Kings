@@ -84,7 +84,7 @@ export default function ResenasPage() {
             Reseñas de Clientes
           </h1>
           {promedio && (
-            <div className="inline-flex items-center gap-3 mt-2">
+            <div className="inline-flex items-center gap-3 mt-2 mb-8">
               <span className="text-3xl font-bold text-[#00d4e8]" style={{ fontFamily: 'Orbitron, sans-serif' }}>
                 {promedio}
               </span>
@@ -92,6 +92,14 @@ export default function ResenasPage() {
               <span className="text-[#6b7a99] text-sm">({resenas.length} reseñas)</span>
             </div>
           )}
+          <div>
+            <a
+              href="#formulario"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-[#0f1a2e] bg-[#00d4e8] hover:bg-[#00bcd4] transition-colors"
+            >
+              Escribir una reseña
+            </a>
+          </div>
         </div>
       </section>
 
@@ -130,7 +138,7 @@ export default function ResenasPage() {
       </section>
 
       {/* Formulario */}
-      <section className="py-20 px-4 sm:px-6 border-t border-gray-100 bg-white">
+      <section id="formulario" className="py-20 px-4 sm:px-6 border-t border-gray-100 bg-white scroll-mt-20">
         <div className="max-w-xl mx-auto">
           <div className="text-center mb-10">
             <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Tu opinión importa</p>

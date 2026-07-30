@@ -364,9 +364,14 @@ export default async function HomePage() {
               <p className="text-xs font-semibold tracking-widest text-[#00d4e8] uppercase mb-3">Testimonios</p>
               <h2 className="text-3xl font-bold text-gray-900" style={{ fontFamily: 'Orbitron, sans-serif' }}>Lo que dicen nuestros clientes</h2>
             </div>
-            <Link href="/resenas" className="text-sm text-[#1e3a8a] font-medium hover:text-[#00d4e8] transition-colors flex items-center gap-1">
-              Ver todas las reseñas <ChevronRight className="h-4 w-4" />
-            </Link>
+            <div className="flex items-center gap-5">
+              <Link href="/resenas#formulario" className="text-sm text-[#1e3a8a] font-medium hover:text-[#00d4e8] transition-colors flex items-center gap-1">
+                Escribir una reseña <ChevronRight className="h-4 w-4" />
+              </Link>
+              <Link href="/resenas" className="text-sm text-[#1e3a8a] font-medium hover:text-[#00d4e8] transition-colors flex items-center gap-1">
+                Ver todas las reseñas <ChevronRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
           {resenas.length > 0 ? (
             <CardCarousel slideClassName="w-[280px] sm:w-[320px]">
