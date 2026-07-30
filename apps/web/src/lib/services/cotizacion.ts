@@ -367,16 +367,22 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
      .text(linkAprobacion, M, secY + 116, { width: CW, align: 'center', lineBreak: false })
 
   // ── FOOTER ────────────────────────────────────────────────────────────────────
+  // footY cae dentro del margen inferior de la pagina; sin desactivarlo
+  // temporalmente, PDFKit interpreta esa posicion como "no cabe" y crea una
+  // pagina en blanco nueva para el texto en cada iteracion.
   const range = doc.bufferedPageRange()
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i)
+    const prevBottomMargin = doc.page.margins.bottom
+    doc.page.margins.bottom = 0
     const footY = doc.page.height - 40
     doc.rect(M, footY - 10, CW, 2).fill(CYAN)
     doc.fontSize(7).fillColor(MUTED).font('Helvetica')
        .text(
          `${tallerNombre}  ·  Generado el ${new Date().toLocaleDateString('es-HN')}  ·  Pag. ${i - range.start + 1} de ${range.count}`,
-         M, footY, { align: 'center', width: CW },
+         M, footY, { align: 'center', width: CW, lineBreak: false },
        )
+    doc.page.margins.bottom = prevBottomMargin
   }
 
   doc.end()

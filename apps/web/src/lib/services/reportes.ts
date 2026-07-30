@@ -473,16 +473,23 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
   }
 
   // ── FOOTER (all pages) ────────────────────────────────────────────────────────
+  // El texto del pie va dentro del margen inferior de la pagina (footY cae por
+  // debajo del limite de contenido). Sin desactivar temporalmente el margen,
+  // PDFKit interpreta esa posicion como "no cabe" y crea una pagina en blanco
+  // nueva para el texto en cada iteracion — dejando paginas fantasma vacias.
   const range = doc.bufferedPageRange()
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i)
+    const prevBottomMargin = doc.page.margins.bottom
+    doc.page.margins.bottom = 0
     const footY = doc.page.height - 40
     doc.rect(M, footY - 10, CW, 2).fill(CYAN)
     doc.fontSize(7).fillColor(MUTED).font('Helvetica')
        .text(
          `${tallerNombre}  ·  Generado el ${new Date().toLocaleDateString('es-HN')}  ·  Pag. ${i - range.start + 1} de ${range.count}`,
-         M, footY, { align: 'center', width: CW },
+         M, footY, { align: 'center', width: CW, lineBreak: false },
        )
+    doc.page.margins.bottom = prevBottomMargin
   }
 
   doc.end()
