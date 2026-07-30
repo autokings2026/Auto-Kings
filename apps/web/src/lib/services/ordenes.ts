@@ -55,6 +55,20 @@ export interface AprobacionInput {
   mensajeAprobacion?: string
 }
 
+export interface SaveChecklistInput {
+  testigos: string[]
+  testigoOtro?: string
+  anormalidades: string[]
+  anormalidadOtro?: string
+  observacionesRecepcion?: string
+  observacionesAdicionales?: string
+}
+
+export interface AceptacionChecklistInput {
+  aceptado: boolean
+  comentarioCliente?: string
+}
+
 export interface SaveReparacionInput {
   notas?: string
   finalizada?: boolean
@@ -248,6 +262,7 @@ export async function findOneOrden(id: string) {
         include: { tipoFoto: { select: { id: true, nombre: true } } },
       },
       fotosReparacion: { orderBy: { createdAt: 'asc' } },
+      checklistRecepcion: true,
       diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
       reparacion: { include: { tecnico: { select: { id: true, nombre: true } } } },
       controlesCC: {
@@ -278,6 +293,13 @@ export async function avanzarFase(id: string, userId: string) {
   const idx = ORDEN_FASES.indexOf(orden!.faseActual as FaseOT)
   const siguienteFase = ORDEN_FASES[idx + 1]
   if (!siguienteFase) badRequest('No hay siguiente fase')
+
+  if (orden!.faseActual === FaseOT.LLEGADA_FOTOS) {
+    const chk = await prisma.checklistRecepcion.findUnique({ where: { ordenId: id } })
+    if (!chk) badRequest('Completa el checklist de recepción antes de avanzar')
+    if (chk!.aceptado === null) badRequest('El checklist de recepción está pendiente de aceptación del cliente')
+    if (chk!.aceptado === false) badRequest('El cliente rechazó el checklist de recepción')
+  }
 
   if (orden!.faseActual === FaseOT.DIAGNOSTICO) {
     const diag = await prisma.diagnosticoCotizacion.findUnique({ where: { ordenId: id } })
@@ -361,6 +383,111 @@ export async function deleteFoto(id: string, fotoId: string) {
   await prisma.fotoIngreso.delete({ where: { id: fotoId } })
   deleteImage(foto!.publicId).catch(() => null)
   return { deleted: true }
+}
+
+// ── Checklist de recepción ────────────────────────────────────────────────────
+
+export async function saveChecklist(id: string, dto: SaveChecklistInput, userId: string) {
+  const orden = await prisma.ordenTrabajo.findUnique({ where: { id } })
+  if (!orden) notFound('OT no encontrada')
+  if (orden!.faseActual !== FaseOT.LLEGADA_FOTOS) badRequest('La OT no está en fase de Llegada y Fotos')
+
+  const existing = await prisma.checklistRecepcion.findUnique({ where: { ordenId: id } })
+  if (existing?.aceptado !== null && existing?.aceptado !== undefined) {
+    badRequest('El checklist ya fue respondido por el cliente y no puede modificarse')
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const checklist = await tx.checklistRecepcion.upsert({
+      where: { ordenId: id },
+      create: {
+        ordenId: id,
+        testigos: dto.testigos,
+        testigoOtro: dto.testigoOtro,
+        anormalidades: dto.anormalidades,
+        anormalidadOtro: dto.anormalidadOtro,
+        observacionesRecepcion: dto.observacionesRecepcion,
+        observacionesAdicionales: dto.observacionesAdicionales,
+      },
+      update: {
+        testigos: dto.testigos,
+        testigoOtro: dto.testigoOtro,
+        anormalidades: dto.anormalidades,
+        anormalidadOtro: dto.anormalidadOtro,
+        observacionesRecepcion: dto.observacionesRecepcion,
+        observacionesAdicionales: dto.observacionesAdicionales,
+      },
+    })
+    await tx.eventoOT.create({
+      data: {
+        ordenId: id,
+        tipo: TipoEventoOT.CHECKLIST_GUARDADO,
+        descripcion: 'Checklist de recepción registrado.',
+        realizadoPorId: userId,
+      },
+    })
+    return checklist
+  })
+}
+
+export async function getWhatsappChecklist(id: string) {
+  const orden = await prisma.ordenTrabajo.findUnique({
+    where: { id },
+    include: {
+      cliente: true,
+      marca: true,
+      modelo: true,
+      checklistRecepcion: { select: { tokenAprobacion: true } },
+    },
+  })
+  if (!orden) notFound('OT no encontrada')
+  if (!orden!.checklistRecepcion) badRequest('Guarda el checklist antes de enviarlo al cliente')
+
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
+  const linkAceptacion = `${appUrl}/checklist/${orden!.checklistRecepcion!.tokenAprobacion}`
+
+  const mensaje = `Hola ${orden!.cliente.nombre}, este es el checklist de recepción de su ${orden!.marca.nombre} ${orden!.modelo.nombre} (placa ${orden!.placa}) registrado en Kings Auto Diagnósticos. Por favor revíselo y confírmenos: ${linkAceptacion}`
+
+  const telefono = orden!.cliente.telefono.replace(/\D/g, '')
+  const waLink = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
+
+  await prisma.eventoOT.create({
+    data: {
+      ordenId: id,
+      tipo: TipoEventoOT.CHECKLIST_ENVIADO_WA,
+      descripcion: 'Enlace del checklist de recepción generado para envío por WhatsApp.',
+    },
+  })
+
+  return { waLink, linkAceptacion, mensaje }
+}
+
+export async function registrarAceptacionChecklist(id: string, dto: AceptacionChecklistInput, userId: string) {
+  const chk = await prisma.checklistRecepcion.findUnique({ where: { ordenId: id } })
+  if (!chk) notFound('Checklist no encontrado')
+  if (chk!.aceptado !== null) badRequest('El checklist ya fue procesado anteriormente')
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.checklistRecepcion.update({
+      where: { ordenId: id },
+      data: {
+        aceptado: dto.aceptado,
+        fechaRespuesta: new Date(),
+        comentarioCliente: dto.comentarioCliente,
+      },
+    })
+    await tx.eventoOT.create({
+      data: {
+        ordenId: id,
+        tipo: dto.aceptado ? TipoEventoOT.CHECKLIST_ACEPTADO : TipoEventoOT.CHECKLIST_RECHAZADO,
+        descripcion: dto.aceptado
+          ? 'Checklist de recepción aceptado por el cliente (registrado por el taller).'
+          : `Checklist de recepción rechazado por el cliente.${dto.comentarioCliente ? ` Motivo: ${dto.comentarioCliente}` : ''}`,
+        realizadoPorId: userId,
+      },
+    })
+    return updated
+  })
 }
 
 // ── Diagnóstico ───────────────────────────────────────────────────────────────

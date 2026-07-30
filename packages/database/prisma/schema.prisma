@@ -85,6 +85,11 @@ enum TipoEventoOT {
   // Encuesta
   ENCUESTA_ENVIADA
   ENCUESTA_RESPONDIDA
+  // Checklist de recepción
+  CHECKLIST_GUARDADO
+  CHECKLIST_ENVIADO_WA
+  CHECKLIST_ACEPTADO
+  CHECKLIST_RECHAZADO
   // General
   CAMBIO_FASE
   NOTA_INTERNA
@@ -259,9 +264,10 @@ model OrdenTrabajo {
   tecnico         User                   @relation("TecnicoOrdenes", fields: [tecnicoId], references: [id], onDelete: Restrict)
   marca           Marca                  @relation(fields: [marcaId], references: [id], onDelete: Restrict)
   modelo          Modelo                 @relation(fields: [modeloId], references: [id], onDelete: Restrict)
-  fotos           FotoIngreso[]
-  fotosReparacion FotoReparacion[]
-  diagnostico     DiagnosticoCotizacion?
+  fotos              FotoIngreso[]
+  fotosReparacion    FotoReparacion[]
+  checklistRecepcion ChecklistRecepcion?
+  diagnostico        DiagnosticoCotizacion?
   reparacion      Reparacion?
   controlesCC     ControlCalidad[]       // puede haber varios (si hay rechazos y reintento)
   entrega         Entrega?
@@ -321,6 +327,32 @@ model FotoReparacion {
 
   @@index([ordenId])
   @@map("fotos_reparacion")
+}
+
+model ChecklistRecepcion {
+  id      String @id @default(cuid())
+  ordenId String @unique
+
+  testigos        String[] @default([]) // testigos del tablero encendidos, ej. "Check Engine (MIL)"
+  testigoOtro     String?
+  anormalidades   String[] @default([]) // anormalidades reportadas por el cliente
+  anormalidadOtro String?
+
+  observacionesRecepcion   String? @db.Text
+  observacionesAdicionales String? @db.Text
+
+  // Aceptación del cliente vía link público (WhatsApp)
+  tokenAprobacion   String    @unique @default(dbgenerated("gen_random_uuid()::text"))
+  aceptado          Boolean? // null=pendiente, true=aceptado, false=rechazado
+  fechaRespuesta    DateTime?
+  comentarioCliente String?   @db.Text // motivo si rechaza
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orden OrdenTrabajo @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+
+  @@map("checklist_recepcion")
 }
 
 // ─────────────────────────────────────────

@@ -128,6 +128,7 @@ export interface OrdenDetalleDto extends OrdenResumenDto {
   kilometraje: number
   citaId?: string
   fotos: FotoIngresoDto[]
+  checklistRecepcion?: ChecklistRecepcionDto
   diagnostico?: DiagnosticoCotizacionDto
   reparacion?: ReparacionDto
   controlesCC: ControlCalidadDto[]
@@ -144,6 +145,32 @@ export interface FotoIngresoDto {
   publicId: string
   creadoPorNombre: string
   createdAt: string
+}
+
+// ─── Checklist de Recepción ──────────────────────────────────────────────────
+
+export interface ChecklistRecepcionDto {
+  id: string
+  testigos: string[]
+  testigoOtro?: string
+  anormalidades: string[]
+  anormalidadOtro?: string
+  observacionesRecepcion?: string
+  observacionesAdicionales?: string
+  tokenAprobacion: string
+  aceptado: boolean | null
+  fechaRespuesta?: string
+  comentarioCliente?: string
+  createdAt: string
+}
+
+export interface SaveChecklistDto {
+  testigos: string[]
+  testigoOtro?: string
+  anormalidades: string[]
+  anormalidadOtro?: string
+  observacionesRecepcion?: string
+  observacionesAdicionales?: string
 }
 
 // ─── Diagnóstico y Cotización ────────────────────────────────────────────────

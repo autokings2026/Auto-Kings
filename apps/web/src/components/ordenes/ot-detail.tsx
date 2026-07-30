@@ -35,6 +35,19 @@ export interface OrdenDetalle {
   cita: { id: string; fecha: string; hora: string } | null
   fotos: { id: string; url: string; publicId: string; createdAt: string; tipoFoto?: { id: string; nombre: string } | null }[]
   fotosReparacion: { id: string; url: string; publicId: string; createdAt: string }[]
+  checklistRecepcion: {
+    id: string
+    testigos: string[]
+    testigoOtro: string | null
+    anormalidades: string[]
+    anormalidadOtro: string | null
+    observacionesRecepcion: string | null
+    observacionesAdicionales: string | null
+    tokenAprobacion: string
+    aceptado: boolean | null
+    fechaRespuesta: string | null
+    comentarioCliente: string | null
+  } | null
   diagnostico: {
     id: string
     sintomaCliente: string

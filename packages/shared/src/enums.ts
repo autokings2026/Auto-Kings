@@ -61,6 +61,10 @@ export enum TipoEventoOT {
   VEHICULO_ENTREGADO = 'VEHICULO_ENTREGADO',
   ENCUESTA_ENVIADA = 'ENCUESTA_ENVIADA',
   ENCUESTA_RESPONDIDA = 'ENCUESTA_RESPONDIDA',
+  CHECKLIST_GUARDADO = 'CHECKLIST_GUARDADO',
+  CHECKLIST_ENVIADO_WA = 'CHECKLIST_ENVIADO_WA',
+  CHECKLIST_ACEPTADO = 'CHECKLIST_ACEPTADO',
+  CHECKLIST_RECHAZADO = 'CHECKLIST_RECHAZADO',
   CAMBIO_FASE = 'CAMBIO_FASE',
   NOTA_INTERNA = 'NOTA_INTERNA',
   CITA_CONVERTIDA = 'CITA_CONVERTIDA',
@@ -112,3 +116,40 @@ export const LABEL_COMBUSTIBLE: Record<TipoCombustible, string> = {
   [TipoCombustible.ELECTRICO]: 'Eléctrico',
   [TipoCombustible.GAS]: 'Gas',
 }
+
+// Checklist de recepción — testigos del tablero y anormalidades reportadas.
+// Listas fijas usadas tanto en el formulario del técnico como en la vista
+// pública de aceptación del cliente.
+export const TESTIGOS_TABLERO: string[] = [
+  'Check Engine (MIL)',
+  'ABS',
+  'Airbag (SRS)',
+  'Control de Tracción (ESP/TCS)',
+  'TPMS (Presión de neumáticos)',
+  'Batería / Sistema de carga',
+  'Presión de aceite',
+  'Temperatura del motor',
+  'Dirección asistida (EPS)',
+  'Freno de estacionamiento / Sistema de frenos',
+  'AWD / 4WD',
+  'Inmovilizador / Llave',
+  'Transmisión',
+]
+
+export const ANORMALIDADES_REPORTADAS: string[] = [
+  'No enciende',
+  'No da marcha',
+  'Se apaga en marcha',
+  'Falla de motor',
+  'Pérdida de potencia',
+  'Ralentí inestable',
+  'Luces parpadean',
+  'Descarga de batería',
+  'Aire acondicionado no funciona',
+  'Radio / Pantalla no funciona',
+  'Cámara de reversa no funciona',
+  'Sensores / ADAS con fallas',
+  'Elevalunas eléctricos con falla',
+  'Cierre centralizado con falla',
+  'Llave inteligente / Control remoto con falla',
+]
