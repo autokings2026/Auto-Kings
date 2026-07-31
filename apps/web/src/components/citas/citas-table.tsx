@@ -2,28 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, MessageCircle, X, Lock, UserPlus } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, ArrowRight, Loader2, Lock, UserPlus, CarFront } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn, formatDate } from '@/lib/utils'
 import { EstadoCita } from '@kings/shared'
-import { ConvertOtModal } from './convert-ot-modal'
+import { RecepcionVehiculoModal } from './recepcion-vehiculo-modal'
 import { NuevaCitaModal } from './nueva-cita-modal'
-
-const FALLBACK_WA =
-  'Hola {{nombre_cliente}}, le notificamos que hemos recibido su vehículo {{marca}} {{modelo}} (placa {{placa}}) en nuestras instalaciones. Nuestro equipo ya está trabajando en el diagnóstico y le estaremos informando sobre el estado de su vehículo. Gracias por confiar en Kings Auto Diagnósticos. 🔧'
-
-function buildWAMessage(template: string, cita: Cita): string {
-  return template
-    .replace(/\{\{nombre_cliente\}\}/g, cita.clienteNombre)
-    .replace(/\{\{marca\}\}/g, cita.marcaNombre)
-    .replace(/\{\{modelo\}\}/g, cita.modeloNombre)
-    .replace(/\{\{placa\}\}/g, cita.placa)
-    .replace(/\{\{fecha_cita\}\}/g, formatDate(cita.fecha))
-    .replace(/\{\{hora_cita\}\}/g, cita.hora)
-}
-
 
 type Rango = 'hoy' | 'semana' | 'mes' | 'todas'
 
@@ -70,75 +56,6 @@ const ESTADO_LABEL: Record<EstadoCita, string> = {
   [EstadoCita.NO_ASISTIO]: 'No asistió',
 }
 
-// ── Modal WhatsApp post-confirmación ─────────────────────────────────────────
-
-function WaConfirmModal({
-  cita,
-  template,
-  onClose,
-  onCrearOT,
-}: {
-  cita: Cita
-  template: string
-  onClose: () => void
-  onCrearOT: () => void
-}) {
-  const mensaje = buildWAMessage(template, cita)
-  const waUrl = `https://wa.me/${cita.clienteTelefono.replace(/\D/g, '')}?text=${encodeURIComponent(mensaje)}`
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-      <div className="bg-surface border border-surface-2 rounded-xl w-full max-w-md shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-surface-2">
-          <div>
-            <h2 className="font-semibold text-white">Cita confirmada</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {cita.clienteNombre} · {cita.marcaNombre} {cita.modeloNombre} · {cita.placa}
-            </p>
-          </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-white">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Mensaje WA */}
-        <div className="px-5 py-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Mensaje de confirmación · WhatsApp
-          </p>
-          <div className="rounded-lg bg-surface-2 p-3 text-xs text-white whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto border border-surface-2">
-            {mensaje}
-          </div>
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full rounded-lg bg-green-600 hover:bg-green-500 text-white py-2.5 text-sm font-medium transition-colors"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Enviar por WhatsApp
-          </a>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-4 border-t border-surface-2">
-          <button onClick={onClose} className="text-sm text-muted-foreground hover:text-white">
-            Cerrar
-          </button>
-          {!cita.ordenTrabajo && (
-            <Button variant="primary" size="sm" onClick={onCrearOT}>
-              Crear Orden de Trabajo →
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Badges ────────────────────────────────────────────────────────────────────
-
 function EstadoBadge({ estado }: { estado: EstadoCita }) {
   return (
     <span className={cn('inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', ESTADO_STYLE[estado])}>
@@ -159,22 +76,8 @@ export function CitasTable() {
   const [estado, setEstado] = useState<EstadoCita | ''>('')
   const [page, setPage] = useState(1)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
-  const [convertModal, setConvertModal] = useState<{ citaId: string; clienteNombre: string; vehiculo: string } | null>(null)
+  const [recepcionModal, setRecepcionModal] = useState<{ citaId: string; clienteNombre: string; vehiculo: string } | null>(null)
   const [nuevaCitaModal, setNuevaCitaModal] = useState(false)
-  const [waTemplate, setWaTemplate] = useState<string>(FALLBACK_WA)
-  const [waModal, setWaModal] = useState<Cita | null>(null)
-
-  // Cargar plantilla WA de recepción
-  useEffect(() => {
-    if (!session?.user) return
-    fetch('/api/inbox/plantillas')
-      .then(r => r.ok ? r.json() : [])
-      .then((list: { tipo: string; contenido: string; activa: boolean }[]) => {
-        const p = list.find(t => t.tipo === 'CONFIRMAR_CITA' && t.activa)
-        if (p) setWaTemplate(p.contenido)
-      })
-      .catch(() => null)
-  }, [session])
 
   // Debounce search
   useEffect(() => {
@@ -207,24 +110,17 @@ export function CitasTable() {
     fetchCitas()
   }, [fetchCitas])
 
-  const updateEstado = async (id: string, nuevoEstado: EstadoCita) => {
+  const cancelar = async (id: string) => {
     if (!session?.user) return
     setUpdatingId(id)
-    // Guardar cita antes del refresh para el modal WA
-    const citaPrevia = nuevoEstado === EstadoCita.CONFIRMADA
-      ? (data?.data.find(c => c.id === id) ?? null)
-      : null
     try {
       const res = await fetch(`/api/citas/${id}/estado`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado: nuevoEstado }),
+        body: JSON.stringify({ estado: EstadoCita.CANCELADA }),
       })
       if (!res.ok) return
-      if (estado && estado !== nuevoEstado) setEstado('')
       await fetchCitas()
-      // Al confirmar, abrir automáticamente el modal de WhatsApp
-      if (citaPrevia) setWaModal({ ...citaPrevia, estado: EstadoCita.CONFIRMADA })
     } finally {
       setUpdatingId(null)
     }
@@ -350,40 +246,24 @@ export function CitasTable() {
                           </div>
                         ) : (
                           <>
-                            {cita.estado === EstadoCita.PENDIENTE && (
-                              <button
-                                onClick={() => updateEstado(cita.id, EstadoCita.CONFIRMADA)}
-                                className="text-xs text-blue-400 hover:text-blue-300 underline"
-                              >
-                                Confirmar
-                              </button>
-                            )}
-                            {cita.estado === EstadoCita.CONFIRMADA && (
-                              <button
-                                onClick={() => setWaModal(cita)}
-                                className="flex items-center gap-1 text-xs text-green-400 hover:text-green-300 underline"
-                              >
-                                <MessageCircle className="h-3 w-3" /> WA
-                              </button>
-                            )}
                             {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && (
                               <button
-                                onClick={() => updateEstado(cita.id, EstadoCita.CANCELADA)}
-                                className="text-xs text-red-400 hover:text-red-300 underline"
-                              >
-                                Cancelar
-                              </button>
-                            )}
-                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && (
-                              <button
-                                onClick={() => setConvertModal({
+                                onClick={() => setRecepcionModal({
                                   citaId: cita.id,
                                   clienteNombre: cita.clienteNombre,
                                   vehiculo: `${cita.marcaNombre} ${cita.modeloNombre} ${cita.anio}`,
                                 })}
                                 className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-medium"
                               >
-                                OT <ArrowRight className="h-3 w-3" />
+                                <CarFront className="h-3.5 w-3.5" /> Recibir Vehículo
+                              </button>
+                            )}
+                            {(cita.estado === EstadoCita.PENDIENTE || cita.estado === EstadoCita.CONFIRMADA) && (
+                              <button
+                                onClick={() => cancelar(cita.id)}
+                                className="text-xs text-red-400 hover:text-red-300 underline"
+                              >
+                                Cancelar
                               </button>
                             )}
                           </>
@@ -422,27 +302,12 @@ export function CitasTable() {
           </div>
         </div>
       )}
-      {waModal && (
-        <WaConfirmModal
-          cita={waModal}
-          template={waTemplate}
-          onClose={() => setWaModal(null)}
-          onCrearOT={() => {
-            setWaModal(null)
-            setConvertModal({
-              citaId: waModal.id,
-              clienteNombre: waModal.clienteNombre,
-              vehiculo: `${waModal.marcaNombre} ${waModal.modeloNombre} ${waModal.anio}`,
-            })
-          }}
-        />
-      )}
-      {convertModal && (
-        <ConvertOtModal
-          citaId={convertModal.citaId}
-          clienteNombre={convertModal.clienteNombre}
-          vehiculo={convertModal.vehiculo}
-          onClose={() => { setConvertModal(null); fetchCitas() }}
+      {recepcionModal && (
+        <RecepcionVehiculoModal
+          citaId={recepcionModal.citaId}
+          clienteNombre={recepcionModal.clienteNombre}
+          vehiculo={recepcionModal.vehiculo}
+          onClose={() => { setRecepcionModal(null); fetchCitas() }}
         />
       )}
       {nuevaCitaModal && (
