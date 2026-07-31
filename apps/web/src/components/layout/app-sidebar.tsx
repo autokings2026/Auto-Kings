@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Images,
   Star,
+  Smile,
   BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -71,6 +72,13 @@ const navItems: NavItem[] = [
     href: '/contenido/resenas',
     label: 'Reseñas',
     icon: Star,
+    roles: [RolUsuario.ADMIN],
+    group: 'Contenido Web',
+  },
+  {
+    href: '/contenido/encuestas',
+    label: 'Encuestas',
+    icon: Smile,
     roles: [RolUsuario.ADMIN],
     group: 'Contenido Web',
   },

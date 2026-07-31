@@ -98,6 +98,11 @@ export interface OrdenDetalle {
     atencion: number | null
     comentario: string | null
     respondidoEn: string | null
+    estadoRevision: string
+    requiereLlamada: boolean
+    notasSeguimiento: string | null
+    cortesiaTipo: string | null
+    codigoCortesia: string | null
   } | null
   eventos: {
     id: string
@@ -289,10 +294,30 @@ function StarDisplay({ value }: { value: number | null }) {
   )
 }
 
+const REVISION_STYLE: Record<string, string> = {
+  PENDIENTE: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  APROBADA: 'bg-green-500/10 text-green-400 border-green-500/20',
+  RECHAZADA: 'bg-red-500/10 text-red-400 border-red-500/20',
+}
+
+const REVISION_LABEL: Record<string, string> = {
+  PENDIENTE: 'Pendiente de revisión',
+  APROBADA: 'Aprobada y publicada',
+  RECHAZADA: 'Mal servicio — no publicada',
+}
+
 function CompletadaPanel({ orden }: { orden: OrdenDetalle }) {
   const enc = orden.encuesta
   const promedio = enc?.calidad && enc?.tiempo && enc?.atencion
     ? ((enc.calidad + enc.tiempo + enc.atencion) / 3).toFixed(1)
+    : null
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const encuestaLink = enc ? `${appUrl}/encuesta/${enc.token}` : null
+  const waInviteLink = encuestaLink
+    ? `https://wa.me/${orden.cliente.telefono.replace(/\D/g, '')}?text=${encodeURIComponent(
+        `Hola ${orden.cliente.nombre}, gracias por confiar en Kings Auto Diagnósticos con su ${orden.marca.nombre} ${orden.modelo.nombre}. Nos encantaría conocer su opinión sobre el servicio: ${encuestaLink}`,
+      )}`
     : null
 
   return (
@@ -341,14 +366,55 @@ function CompletadaPanel({ orden }: { orden: OrdenDetalle }) {
               <p className="text-xs text-muted-foreground">
                 Respondida el {formatDate(enc.respondidoEn)}
               </p>
+
+              {/* Estado de revisión del staff */}
+              <div className={cn('flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium', REVISION_STYLE[enc.estadoRevision])}>
+                {REVISION_LABEL[enc.estadoRevision]}
+              </div>
+
+              {enc.estadoRevision === 'PENDIENTE' && (
+                <a href="/contenido/encuestas" className="inline-block text-xs text-accent hover:underline">
+                  Ir a revisar esta encuesta →
+                </a>
+              )}
+
+              {enc.estadoRevision === 'RECHAZADA' && (
+                <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 space-y-1">
+                  {enc.requiereLlamada && (
+                    <p className="text-xs text-red-300">
+                      📞 Requiere llamada de seguimiento — {orden.cliente.nombre} · {orden.cliente.telefono}
+                      {orden.cliente.email ? ` · ${orden.cliente.email}` : ''}
+                    </p>
+                  )}
+                  {enc.notasSeguimiento && (
+                    <p className="text-xs text-gray-400">{enc.notasSeguimiento}</p>
+                  )}
+                  {enc.codigoCortesia ? (
+                    <p className="text-xs text-green-400">
+                      🎁 Cortesía enviada: {enc.cortesiaTipo} — código {enc.codigoCortesia}
+                    </p>
+                  ) : (
+                    <a href="/contenido/encuestas" className="inline-block text-xs text-accent hover:underline">
+                      Enviar código de cortesía →
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Link para el cliente:{' '}
-              <span className="text-accent font-mono">
-                {`${process.env.NEXT_PUBLIC_APP_URL ?? ''}/encuesta/${enc.token}`}
-              </span>
-            </p>
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Link para el cliente:{' '}
+                <span className="text-accent font-mono">{encuestaLink}</span>
+              </p>
+              {waInviteLink && (
+                <a href={waInviteLink} target="_blank" rel="noopener noreferrer">
+                  <Button variant="outline" className="w-full border-green-600/50 text-green-400 hover:bg-green-600/10">
+                    Enviar encuesta por WhatsApp
+                  </Button>
+                </a>
+              )}
+            </div>
           )}
         </div>
       ) : null}

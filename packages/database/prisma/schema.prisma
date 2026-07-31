@@ -86,6 +86,9 @@ enum TipoEventoOT {
   // Encuesta
   ENCUESTA_ENVIADA
   ENCUESTA_RESPONDIDA
+  ENCUESTA_APROBADA    // staff aprobo el comentario -> se publica como resena
+  ENCUESTA_RECHAZADA   // staff marco mal servicio (con o sin llamada de seguimiento)
+  CORTESIA_ENVIADA     // se genero y envio codigo de cortesia por WhatsApp
   // Checklist de recepción
   CHECKLIST_GUARDADO
   CHECKLIST_ENVIADO_WA

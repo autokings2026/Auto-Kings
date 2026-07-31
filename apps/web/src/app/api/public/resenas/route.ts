@@ -12,50 +12,29 @@ const ResenaSchema = z.object({
   comentario: z.string().min(20, 'El comentario debe tener al menos 20 caracteres').max(1000),
 })
 
-// GET /api/public/resenas — aprobadas + encuestas ≥4 estrellas
+// GET /api/public/resenas — reseñas aprobadas por el staff.
+// Las respuestas de la encuesta de satisfacción con buen comentario ya no se
+// publican aquí automáticamente: pasan primero por el módulo de revisión de
+// encuestas (Contenido → Encuestas) y, al aprobarse, generan una Resena con
+// estado APROBADA que aparece en este mismo listado.
 export async function GET() {
-  const [resenas, encuestas] = await Promise.all([
-    prisma.resena.findMany({
-      where: { estado: 'APROBADA' },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
-      select: {
-        id: true,
-        nombre: true,
-        vehiculoMarca: true,
-        vehiculoModelo: true,
-        vehiculoAnio: true,
-        calificacion: true,
-        comentario: true,
-        createdAt: true,
-      },
-    }),
-    prisma.encuestaSatisfaccion.findMany({
-      where: {
-        respondidoEn: { not: null },
-        calidad: { gte: 4 },
-        comentario: { not: null },
-      },
-      orderBy: { respondidoEn: 'desc' },
-      take: 10,
-      select: {
-        id: true,
-        calidad: true,
-        comentario: true,
-        respondidoEn: true,
-        orden: {
-          select: {
-            cliente: { select: { nombre: true } },
-            marca: { select: { nombre: true } },
-            modelo: { select: { nombre: true } },
-            anio: true,
-          },
-        },
-      },
-    }),
-  ])
+  const resenas = await prisma.resena.findMany({
+    where: { estado: 'APROBADA' },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+    select: {
+      id: true,
+      nombre: true,
+      vehiculoMarca: true,
+      vehiculoModelo: true,
+      vehiculoAnio: true,
+      calificacion: true,
+      comentario: true,
+      createdAt: true,
+    },
+  })
 
-  const resenasFormateadas = resenas.map(r => ({
+  const todas = resenas.map(r => ({
     id: r.id,
     nombre: r.nombre,
     vehiculo: [r.vehiculoMarca, r.vehiculoModelo, r.vehiculoAnio].filter(Boolean).join(' '),
@@ -64,20 +43,6 @@ export async function GET() {
     fecha: r.createdAt.toISOString(),
     fuente: 'manual' as const,
   }))
-
-  const encuestasFormateadas = encuestas.map(e => ({
-    id: `enc-${e.id}`,
-    nombre: e.orden.cliente.nombre,
-    vehiculo: [e.orden.marca.nombre, e.orden.modelo.nombre, e.orden.anio].filter(Boolean).join(' '),
-    calificacion: e.calidad ?? 4,
-    comentario: e.comentario ?? '',
-    fecha: (e.respondidoEn ?? new Date()).toISOString(),
-    fuente: 'encuesta' as const,
-  }))
-
-  const todas = [...resenasFormateadas, ...encuestasFormateadas].sort(
-    (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
-  )
 
   return Response.json(todas)
 }
