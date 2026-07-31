@@ -281,11 +281,11 @@ export function RecepcionVehiculoModal({ citaId, clienteNombre, vehiculo, onClos
                         variant="default"
                         onClick={() => registrarAceptacion(true)}
                         disabled={registrando}
-                        className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto"
+                        className="bg-green-600 hover:bg-green-500 text-white flex-1"
                       >
                         {registrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle className="h-4 w-4 mr-1" />Cliente aceptó en persona</>}
                       </Button>
-                      <Button variant="destructive" onClick={() => registrarAceptacion(false)} disabled={registrando} className="w-full sm:w-auto">
+                      <Button variant="destructive" onClick={() => registrarAceptacion(false)} disabled={registrando} className="flex-1">
                         <XCircle className="h-4 w-4 mr-1" />Cliente rechazó
                       </Button>
                     </div>
