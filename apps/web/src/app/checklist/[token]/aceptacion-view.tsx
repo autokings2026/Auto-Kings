@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react'
 import { CheckCircle, XCircle, Loader2, AlertTriangle, Car, Gauge } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+// Inserta transformaciones de Cloudinary (compresión + formato automático) en
+// la URL para que las fotos carguen rápido en el link del cliente.
+function cloudinaryResize(url: string, transform: string): string {
+  return url.includes('/upload/') ? url.replace('/upload/', `/upload/${transform}/`) : url
+}
+
 interface ChecklistData {
   token: string
   numero: string
@@ -145,13 +151,18 @@ export function AceptacionView({ token }: { token: string }) {
               {data.fotos.map((url, i) => (
                 <a
                   key={url}
-                  href={url}
+                  href={cloudinaryResize(url, 'w_1200,q_auto,f_auto')}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block aspect-square rounded-lg overflow-hidden bg-gray-800"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt={`Foto de ingreso ${i + 1}`} className="w-full h-full object-cover" />
+                  <img
+                    src={cloudinaryResize(url, 'w_300,h_300,c_fill,q_auto,f_auto')}
+                    alt={`Foto de ingreso ${i + 1}`}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
                 </a>
               ))}
             </div>

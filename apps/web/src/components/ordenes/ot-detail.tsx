@@ -193,7 +193,9 @@ export function OtDetail({ ordenId }: { ordenId: string }) {
           const isDone = i < faseIdx
           const isActive = fase === orden.faseActual
           const style = isDone ? FASE_ICON_STYLE.done : isActive ? FASE_ICON_STYLE.active : FASE_ICON_STYLE.pending
-          const isClickable = isDone || isActive
+          // Las fases completadas ya no se pueden volver a abrir — solo sirven
+          // como indicador de progreso, no como pantalla a la que regresar.
+          const isClickable = isActive
 
           return (
             <div key={fase} className="flex items-center">

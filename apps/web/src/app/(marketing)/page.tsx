@@ -16,7 +16,7 @@ import { CardCarousel } from '@/components/marketing/CardCarousel'
 import { Reveal } from '@/components/marketing/Reveal'
 
 export const metadata: Metadata = {
-  title: 'Kings Auto Diagnósticos — Cofradía, Cortés, Honduras',
+  title: 'Kings Auto Diagnósticos',
   description: 'Centro de servicio automotriz con diagnóstico computarizado y seguimiento digital en tiempo real. Cofradía, Cortés.',
 }
 
