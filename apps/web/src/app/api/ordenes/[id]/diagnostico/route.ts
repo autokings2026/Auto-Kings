@@ -5,7 +5,7 @@ import { saveDiagnostico } from '@/lib/services/ordenes'
 
 const ItemSchema = z.object({
   descripcion:    z.string().min(1),
-  tipo:           z.enum(['MATERIAL', 'MANO_OBRA']),
+  tipo:           z.enum(['MATERIAL', 'PARTE', 'MANO_OBRA']),
   cantidad:       z.number().min(0),
   precioUnitario: z.number().min(0),
   posicion:       z.number().int().optional(),

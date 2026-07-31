@@ -16,6 +16,7 @@ interface CotizacionData {
   diagnosticoTecnico: string
   items: { descripcion: string; tipo: string; cantidad: number; precioUnitario: number; subtotal: number }[]
   totalMateriales: number
+  totalPartes: number
   totalManoObra: number
   aplicarISV: boolean
   totalGeneral: number
@@ -140,7 +141,7 @@ export function AprobacionView({ token }: { token: string }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white">{item.descripcion}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {item.tipo === 'MATERIAL' ? 'Material' : 'Mano de obra'} · {item.cantidad} × {fmt(item.precioUnitario)}
+                    {item.tipo === 'MATERIAL' ? 'Material' : item.tipo === 'PARTE' ? 'Parte' : 'Mano de obra'} · {item.cantidad} × {fmt(item.precioUnitario)}
                   </p>
                 </div>
                 <p className="text-sm text-white font-medium shrink-0">{fmt(item.subtotal)}</p>
@@ -153,17 +154,20 @@ export function AprobacionView({ token }: { token: string }) {
               <span>Materiales</span><span>{fmt(data.totalMateriales)}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-400">
+              <span>Partes</span><span>{fmt(data.totalPartes)}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-400">
               <span>Mano de obra</span><span>{fmt(data.totalManoObra)}</span>
             </div>
             {data.aplicarISV && (
               <>
                 <div className="flex justify-between text-sm text-gray-400 border-t border-gray-800 pt-1.5">
                   <span>Subtotal</span>
-                  <span>{fmt(data.totalMateriales + data.totalManoObra)}</span>
+                  <span>{fmt(data.totalMateriales + data.totalPartes + data.totalManoObra)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-amber-400/80">
                   <span>ISV (15%)</span>
-                  <span>+ {fmt(parseFloat(((data.totalMateriales + data.totalManoObra) * 0.15).toFixed(2)))}</span>
+                  <span>+ {fmt(parseFloat(((data.totalMateriales + data.totalPartes + data.totalManoObra) * 0.15).toFixed(2)))}</span>
                 </div>
               </>
             )}

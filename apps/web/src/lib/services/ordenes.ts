@@ -37,7 +37,7 @@ export interface QueryOrdenesInput {
 
 export interface ItemInput {
   descripcion: string
-  tipo: 'MATERIAL' | 'MANO_OBRA'
+  tipo: 'MATERIAL' | 'PARTE' | 'MANO_OBRA'
   cantidad: number
   precioUnitario: number
   posicion?: number
@@ -506,12 +506,13 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
     (acc, item) => {
       const sub = Number(item.cantidad) * Number(item.precioUnitario)
       if (item.tipo === 'MATERIAL') acc.materiales += sub
+      else if (item.tipo === 'PARTE') acc.partes += sub
       else acc.manoObra += sub
       return acc
     },
-    { materiales: 0, manoObra: 0 },
+    { materiales: 0, partes: 0, manoObra: 0 },
   )
-  const subtotal = totales.materiales + totales.manoObra
+  const subtotal = totales.materiales + totales.partes + totales.manoObra
   const aplicarISV = dto.aplicarISV ?? false
   const totalGeneral = aplicarISV ? parseFloat((subtotal * 1.15).toFixed(2)) : subtotal
 
@@ -528,6 +529,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         sintomaCliente: dto.sintomaCliente,
         diagnosticoTecnico: dto.diagnosticoTecnico,
         totalMateriales: totales.materiales,
+        totalPartes: totales.partes,
         totalManoObra: totales.manoObra,
         aplicarISV,
         totalGeneral,
@@ -537,6 +539,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         sintomaCliente: dto.sintomaCliente,
         diagnosticoTecnico: dto.diagnosticoTecnico,
         totalMateriales: totales.materiales,
+        totalPartes: totales.partes,
         totalManoObra: totales.manoObra,
         aplicarISV,
         totalGeneral,
@@ -571,6 +574,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         realizadoPorId: userId,
         metadata: {
           totalMateriales: totales.materiales,
+          totalPartes: totales.partes,
           totalManoObra: totales.manoObra,
           totalGeneral,
         },

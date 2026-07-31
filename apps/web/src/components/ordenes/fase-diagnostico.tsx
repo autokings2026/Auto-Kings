@@ -14,7 +14,7 @@ import type { OrdenDetalle } from './ot-detail'
 
 interface ItemRow {
   descripcion: string
-  tipo: 'MATERIAL' | 'MANO_OBRA'
+  tipo: 'MATERIAL' | 'PARTE' | 'MANO_OBRA'
   cantidad: string
   precioUnitario: string
 }
@@ -33,7 +33,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
   const [items, setItems] = useState<ItemRow[]>(
     diag?.items.map(i => ({
       descripcion: i.descripcion,
-      tipo: i.tipo as 'MATERIAL' | 'MANO_OBRA',
+      tipo: i.tipo as 'MATERIAL' | 'PARTE' | 'MANO_OBRA',
       cantidad: String(i.cantidad),
       precioUnitario: String(i.precioUnitario),
     })) ?? [emptyItem()],
@@ -50,12 +50,13 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
     (acc, item) => {
       const sub = Number(item.cantidad) * Number(item.precioUnitario)
       if (item.tipo === 'MATERIAL') acc.materiales += sub
+      else if (item.tipo === 'PARTE') acc.partes += sub
       else acc.manoObra += sub
       return acc
     },
-    { materiales: 0, manoObra: 0 },
+    { materiales: 0, partes: 0, manoObra: 0 },
   )
-  const subtotal = totales.materiales + totales.manoObra
+  const subtotal = totales.materiales + totales.partes + totales.manoObra
   const montoISV = aplicarISV ? parseFloat((subtotal * 0.15).toFixed(2)) : 0
   const totalFinal = subtotal + montoISV
 
@@ -91,14 +92,17 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
   }
 
   const enviarWhatsapp = async () => {
+    // Abrimos la pestaña de inmediato (dentro del gesto de click) para que el
+    // navegador no la bloquee; una vez llega el link se la asignamos.
+    const win = window.open('about:blank', '_blank')
     setSendingWa(true)
     try {
-      const res = await fetch(`/api/ordenes/${orden.id}/whatsapp/cotizacion`, {
-
-      })
-      if (!res.ok) { const e = await res.json(); setError(e.message); return }
+      const res = await fetch(`/api/ordenes/${orden.id}/whatsapp/cotizacion`)
+      if (!res.ok) { const e = await res.json(); setError(e.message); win?.close(); return }
       const { waLink: link } = await res.json()
       setWaLink(link)
+      if (win) win.location.href = link
+      else window.open(link, '_blank')
       onUpdate()
     } finally { setSendingWa(false) }
   }
@@ -189,6 +193,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                   >
                     <option value="MANO_OBRA">Mano de obra</option>
                     <option value="MATERIAL">Material</option>
+                    <option value="PARTE">Parte</option>
                   </select>
                   {!readonly && (
                     <button
@@ -344,6 +349,10 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                 <span>{formatCurrency(totales.materiales)}</span>
               </div>
               <div className="flex justify-between gap-8 text-muted-foreground">
+                <span>Partes</span>
+                <span>{formatCurrency(totales.partes)}</span>
+              </div>
+              <div className="flex justify-between gap-8 text-muted-foreground">
                 <span>Mano de obra</span>
                 <span>{formatCurrency(totales.manoObra)}</span>
               </div>
@@ -385,27 +394,23 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
               <div className="rounded-lg border border-surface-2 bg-surface-2/40 p-4 space-y-3">
                 <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Enviar cotización al cliente</p>
 
-                <div className="flex flex-wrap gap-2">
-                  {/* WhatsApp */}
-                  {waLink ? (
-                    <a href={waLink} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline" className="border-green-600/50 text-green-400 hover:bg-green-600/10">
-                        <MessageCircle className="h-4 w-4 mr-2" />
-                        Abrir WhatsApp ↗
-                      </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* WhatsApp — un solo clic: genera el link y abre WhatsApp de inmediato */}
+                  <Button
+                    variant="outline"
+                    onClick={enviarWhatsapp}
+                    disabled={sendingWa}
+                    className="border-green-600/50 text-green-400 hover:bg-green-600/10"
+                  >
+                    {sendingWa
+                      ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      : <MessageCircle className="h-4 w-4 mr-2" />}
+                    Enviar por WhatsApp
+                  </Button>
+                  {waLink && (
+                    <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-xs text-green-400 hover:text-green-300 underline">
+                      ¿No se abrió? Abrir de nuevo
                     </a>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      onClick={enviarWhatsapp}
-                      disabled={sendingWa}
-                      className="border-green-600/50 text-green-400 hover:bg-green-600/10"
-                    >
-                      {sendingWa
-                        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        : <MessageCircle className="h-4 w-4 mr-2" />}
-                      Enviar por WhatsApp
-                    </Button>
                   )}
 
                   {/* PDF */}

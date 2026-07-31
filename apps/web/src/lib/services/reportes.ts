@@ -121,6 +121,7 @@ export async function getDetalleReporte(id: string) {
         cantidad: Number(i.cantidad), precioUnitario: Number(i.precioUnitario), subtotal: Number(i.subtotal),
       })),
       totalMateriales: Number(diag.totalMateriales),
+      totalPartes: Number(diag.totalPartes),
       totalManoObra: Number(diag.totalManoObra),
       totalGeneral: Number(diag.totalGeneral),
     } : null,
@@ -199,6 +200,15 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
     doc.fontSize(7.5).fillColor(WHITE).font('Helvetica-Bold')
        .text(title, M + 12, sy + 6, { width: CW - 20, lineBreak: false })
     doc.y = sy + 28
+  }
+
+  // Antes de dibujar una seccion con coordenadas absolutas, verifica que quepa
+  // en lo que resta de la pagina; si no, agrega una pagina nueva primero. Sin
+  // esto, PDFKit inserta paginas en blanco en cascada cuando una llamada a
+  // .text() con Y absoluto excede el margen inferior.
+  const ensureSpace = (neededHeight: number) => {
+    const bottom = doc.page.height - doc.page.margins.bottom
+    if (doc.y + neededHeight > bottom) doc.addPage()
   }
 
   // Table cell helper
@@ -300,16 +310,22 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
 
   // ── DIAGNOSTICO ───────────────────────────────────────────────────────────────
   if (r.diagnostico) {
+    doc.fontSize(9)
+    ensureSpace(28 + doc.heightOfString(r.diagnostico.sintomaCliente, { width: CW - 24 }) + 10)
     sectionBar('SINTOMA REPORTADO POR EL CLIENTE')
     doc.fontSize(9).fillColor('#334155').font('Helvetica')
        .text(r.diagnostico.sintomaCliente, M + 12, doc.y, { width: CW - 24 })
     doc.moveDown(0.4)
 
+    doc.fontSize(9)
+    ensureSpace(28 + doc.heightOfString(r.diagnostico.diagnosticoTecnico, { width: CW - 24 }) + 10)
     sectionBar('DIAGNOSTICO TECNICO')
     doc.fontSize(9).fillColor('#334155').font('Helvetica')
        .text(r.diagnostico.diagnosticoTecnico, M + 12, doc.y, { width: CW - 24 })
     doc.moveDown(0.4)
 
+    const HDR_H_EST = 20, ROW_H_EST = 18
+    ensureSpace(28 + HDR_H_EST + r.diagnostico.items.length * ROW_H_EST + 18 * 3 + 24 + 10)
     sectionBar('TRABAJOS Y MATERIALES')
 
     const COLS = [
@@ -335,7 +351,7 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
       doc.moveTo(M, ry + ROW_H).lineTo(M + CW, ry + ROW_H).strokeColor(BORDER).lineWidth(0.3).stroke()
       const vals = [
         item.descripcion,
-        item.tipo === 'MATERIAL' ? 'Material' : 'Mano de obra',
+        item.tipo === 'MATERIAL' ? 'Material' : item.tipo === 'PARTE' ? 'Parte' : 'Mano de obra',
         String(item.cantidad),
         fmtM(item.precioUnitario),
         fmtM(item.subtotal),
@@ -350,6 +366,7 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
     const totX = M + 308, totW = CW - 308
     ;[
       { label: 'Materiales',   val: fmtM(r.diagnostico.totalMateriales) },
+      { label: 'Partes',       val: fmtM(r.diagnostico.totalPartes)     },
       { label: 'Mano de Obra', val: fmtM(r.diagnostico.totalManoObra)   },
     ].forEach(t => {
       doc.rect(totX, ry, totW, 18).fill(LIGHT).strokeColor(BORDER).lineWidth(0.3).stroke()
@@ -372,6 +389,8 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
 
   // ── NOTAS DEL TECNICO ─────────────────────────────────────────────────────────
   if (r.reparacion?.notas) {
+    doc.fontSize(9)
+    ensureSpace(28 + doc.heightOfString(r.reparacion.notas, { width: CW - 24 }) + 10)
     sectionBar('NOTAS DEL TECNICO')
     doc.fontSize(9).fillColor('#334155').font('Helvetica')
        .text(r.reparacion.notas, M + 12, doc.y, { width: CW - 24 })
@@ -381,13 +400,14 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
   // ── CONTROL DE CALIDAD ────────────────────────────────────────────────────────
   if (r.controlesCC.length > 0) {
     const lastCC = r.controlesCC[r.controlesCC.length - 1]!
+    const ccH = lastCC.observaciones ? 62 : 46
+    ensureSpace(28 + ccH + 10)
     sectionBar('CONTROL DE CALIDAD')
 
     const aprobado = lastCC.aprobado
     const ccBg  = aprobado ? GREEN_BG  : RED_BG
     const ccAcc = aprobado ? GREEN     : RED
     const ccBdr = aprobado ? GREEN_BD  : RED_BD
-    const ccH   = lastCC.observaciones ? 62 : 46
     const ccY   = doc.y
 
     doc.rect(M, ccY, CW, ccH).fill(ccBg).strokeColor(ccBdr).lineWidth(0.5).stroke()
@@ -409,8 +429,11 @@ export async function generarPdfReporte(id: string): Promise<{ buffer: Buffer; f
 
   // ── ENCUESTA DE SATISFACCION ──────────────────────────────────────────────────
   if (r.encuesta?.respondidoEn) {
-    sectionBar('ENCUESTA DE SATISFACCION')
     const enc = r.encuesta
+    doc.fontSize(8.5)
+    const comentarioH = enc.comentario ? doc.heightOfString(`"${enc.comentario}"`, { width: CW - 30 }) + 15 : 0
+    ensureSpace(28 + 88 + comentarioH + 10)
+    sectionBar('ENCUESTA DE SATISFACCION')
     const eY  = doc.y
 
     ;[

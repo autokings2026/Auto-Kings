@@ -34,6 +34,7 @@ interface Reporte {
     diagnosticoTecnico: string
     items: { descripcion: string; tipo: string; cantidad: number; precioUnitario: number; subtotal: number }[]
     totalMateriales: number
+    totalPartes: number
     totalManoObra: number
     totalGeneral: number
   } | null
@@ -223,7 +224,7 @@ export default function ReporteDetallePage({ params }: { params: { id: string } 
                   <tr key={i} className={i % 2 === 0 ? '' : 'bg-surface-2/30'}>
                     <td className="px-3 py-2 text-white">{item.descripcion}</td>
                     <td className="px-3 py-2 text-muted-foreground text-xs">
-                      {item.tipo === 'MATERIAL' ? 'Material' : 'Mano de obra'}
+                      {item.tipo === 'MATERIAL' ? 'Material' : item.tipo === 'PARTE' ? 'Parte' : 'Mano de obra'}
                     </td>
                     <td className="px-3 py-2 text-right text-white">{item.cantidad}</td>
                     <td className="px-3 py-2 text-right text-white">{formatCurrency(item.precioUnitario)}</td>
@@ -235,6 +236,10 @@ export default function ReporteDetallePage({ params }: { params: { id: string } 
                 <tr>
                   <td colSpan={4} className="px-3 py-1.5 text-right text-xs text-muted-foreground">Materiales</td>
                   <td className="px-3 py-1.5 text-right text-sm text-white">{formatCurrency(reporte.diagnostico.totalMateriales)}</td>
+                </tr>
+                <tr>
+                  <td colSpan={4} className="px-3 py-1.5 text-right text-xs text-muted-foreground">Partes</td>
+                  <td className="px-3 py-1.5 text-right text-sm text-white">{formatCurrency(reporte.diagnostico.totalPartes)}</td>
                 </tr>
                 <tr>
                   <td colSpan={4} className="px-3 py-1.5 text-right text-xs text-muted-foreground">Mano de obra</td>

@@ -117,12 +117,17 @@ export function RecepcionVehiculoModal({ citaId, clienteNombre, vehiculo, onClos
 
   const enviarWhatsapp = async () => {
     if (!otId) return
+    // Abrimos la pestaña de inmediato (dentro del gesto de click) para que el
+    // navegador no la bloquee; una vez llega el link se la asignamos.
+    const win = window.open('about:blank', '_blank')
     setSendingWa(true); setError('')
     try {
       const res = await fetch(`/api/ordenes/${otId}/whatsapp/checklist`)
-      if (!res.ok) { const e = await res.json(); setError(e.message); return }
+      if (!res.ok) { const e = await res.json(); setError(e.message); win?.close(); return }
       const { waLink: link } = await res.json()
       setWaLink(link)
+      if (win) win.location.href = link
+      else window.open(link, '_blank')
     } finally { setSendingWa(false) }
   }
 
@@ -249,24 +254,20 @@ export function RecepcionVehiculoModal({ citaId, clienteNombre, vehiculo, onClos
                     Enviar recepción al cliente (fotos + checklist en un solo mensaje)
                   </p>
 
-                  <div className="flex flex-wrap gap-2">
-                    {waLink ? (
-                      <a href={waLink} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" className="border-green-600/50 text-green-400 hover:bg-green-600/10">
-                          <MessageCircle className="h-4 w-4 mr-2" />
-                          Abrir WhatsApp ↗
-                        </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={enviarWhatsapp}
+                      disabled={sendingWa}
+                      className="border-green-600/50 text-green-400 hover:bg-green-600/10"
+                    >
+                      {sendingWa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <MessageCircle className="h-4 w-4 mr-2" />}
+                      Enviar por WhatsApp
+                    </Button>
+                    {waLink && (
+                      <a href={waLink} target="_blank" rel="noopener noreferrer" className="text-xs text-green-400 hover:text-green-300 underline">
+                        ¿No se abrió? Abrir de nuevo
                       </a>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={enviarWhatsapp}
-                        disabled={sendingWa}
-                        className="border-green-600/50 text-green-400 hover:bg-green-600/10"
-                      >
-                        {sendingWa ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <MessageCircle className="h-4 w-4 mr-2" />}
-                        Enviar por WhatsApp
-                      </Button>
                     )}
                     <Button variant="outline" onClick={copyLink}>
                       {copied ? <Check className="h-4 w-4 mr-2 text-green-400" /> : <Copy className="h-4 w-4 mr-2" />}

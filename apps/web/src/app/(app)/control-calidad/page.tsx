@@ -255,7 +255,7 @@ export default function ControlCalidadPage() {
                       <div>
                         <p className="text-white">{item.descripcion}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.tipo === 'MATERIAL' ? 'Material' : 'Mano de obra'} · {item.cantidad} × L. {Number(item.precioUnitario).toLocaleString('es-HN', { minimumFractionDigits: 2 })}
+                          {item.tipo === 'MATERIAL' ? 'Material' : item.tipo === 'PARTE' ? 'Parte' : 'Mano de obra'} · {item.cantidad} × L. {Number(item.precioUnitario).toLocaleString('es-HN', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                       <span className="text-white font-medium shrink-0 ml-4">

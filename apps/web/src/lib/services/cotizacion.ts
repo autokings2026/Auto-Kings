@@ -35,6 +35,7 @@ export async function findCotizacionByToken(token: string) {
       subtotal: Number(i.subtotal),
     })),
     totalMateriales: Number(diag.totalMateriales),
+    totalPartes: Number(diag.totalPartes),
     totalManoObra: Number(diag.totalManoObra),
     aplicarISV: diag.aplicarISV,
     totalGeneral: Number(diag.totalGeneral),
@@ -158,6 +159,15 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
     doc.y = sy + 28
   }
 
+  // Antes de dibujar una seccion con coordenadas absolutas, verifica que quepa
+  // en lo que resta de la pagina; si no, agrega una pagina nueva primero. Sin
+  // esto, PDFKit inserta paginas en blanco en cascada cuando una llamada a
+  // .text() con Y absoluto excede el margen inferior.
+  const ensureSpace = (neededHeight: number) => {
+    const bottom = doc.page.height - doc.page.margins.bottom
+    if (doc.y + neededHeight > bottom) doc.addPage()
+  }
+
   // Table cell helper
   const cell = (
     text: string, x: number, y: number, w: number,
@@ -249,17 +259,25 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
   doc.y = cardY + CARD_H + 14
 
   // ── SINTOMA / DIAGNOSTICO ─────────────────────────────────────────────────────
+  doc.fontSize(9)
+  ensureSpace(28 + doc.heightOfString(diag.sintomaCliente, { width: CW - 24 }) + 10)
   sectionBar('SINTOMA REPORTADO POR EL CLIENTE')
   doc.fontSize(9).fillColor('#334155').font('Helvetica')
      .text(diag.sintomaCliente, M + 12, doc.y, { width: CW - 24 })
   doc.moveDown(0.3)
 
+  doc.fontSize(9)
+  ensureSpace(28 + doc.heightOfString(diag.diagnosticoTecnico, { width: CW - 24 }) + 10)
   sectionBar('DIAGNOSTICO TECNICO')
   doc.fontSize(9).fillColor('#334155').font('Helvetica')
      .text(diag.diagnosticoTecnico, M + 12, doc.y, { width: CW - 24 })
   doc.moveDown(0.3)
 
   // ── ITEMS TABLE ───────────────────────────────────────────────────────────────
+  // Reserva espacio para el header, filas, bloque de subtotales (3 + ISV opcional
+  // + total general) y la seccion de aprobacion (QR/aviso) que sigue sin corte.
+  const totalesRows = 3 + (diag.aplicarISV ? 2 : 0)
+  ensureSpace(28 + 20 + diag.items.length * 18 + totalesRows * 18 + 32 + 130 + 10)
   sectionBar('TRABAJOS Y MATERIALES')
 
   const COLS = [
@@ -284,7 +302,7 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
     doc.moveTo(M, rowY + ROW_H).lineTo(M + CW, rowY + ROW_H).strokeColor(BORDER).lineWidth(0.3).stroke()
     const vals = [
       item.descripcion,
-      item.tipo === 'MATERIAL' ? 'Material' : 'Mano de obra',
+      item.tipo === 'MATERIAL' ? 'Material' : item.tipo === 'PARTE' ? 'Parte' : 'Mano de obra',
       String(Number(item.cantidad)),
       fmt(Number(item.precioUnitario)),
       fmt(Number(item.subtotal)),
@@ -297,10 +315,11 @@ export async function generarPdfCotizacion(token: string): Promise<{ buffer: Buf
 
   // Subtotals
   const totX = M + 308, totW = CW - 308
-  const subtotalBase = Number(diag.totalMateriales) + Number(diag.totalManoObra)
+  const subtotalBase = Number(diag.totalMateriales) + Number(diag.totalPartes) + Number(diag.totalManoObra)
 
   ;[
     { label: 'Materiales',   val: fmt(Number(diag.totalMateriales)) },
+    { label: 'Partes',       val: fmt(Number(diag.totalPartes))     },
     { label: 'Mano de Obra', val: fmt(Number(diag.totalManoObra))   },
   ].forEach(t => {
     doc.rect(totX, rowY, totW, 18).fill(LIGHT).strokeColor(BORDER).lineWidth(0.3).stroke()

@@ -42,6 +42,7 @@ export enum TipoCombustible {
 
 export enum TipoItemCotizacion {
   MATERIAL = 'MATERIAL',
+  PARTE = 'PARTE',
   MANO_OBRA = 'MANO_OBRA',
 }
 
