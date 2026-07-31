@@ -446,7 +446,12 @@ export async function getWhatsappChecklist(id: string) {
   const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
   const linkAceptacion = `${appUrl}/checklist/${orden!.checklistRecepcion!.tokenAprobacion}`
 
-  const mensaje = `Hola ${orden!.cliente.nombre}, este es el checklist de recepción de su ${orden!.marca.nombre} ${orden!.modelo.nombre} (placa ${orden!.placa}) registrado en Kings Auto Diagnósticos. Por favor revíselo y confírmenos: ${linkAceptacion}`
+  const mensaje = `Hola ${orden!.cliente.nombre}, hemos recibido su ${orden!.marca.nombre} ${orden!.modelo.nombre} (placa ${orden!.placa}) en Kings Auto Diagnósticos. 🚗
+
+Estas son las condiciones de recepción registradas (fotos, testigos del tablero y observaciones). Por favor revíselas y confírmenos su aprobación:
+${linkAceptacion}
+
+Gracias por confiar en nosotros.`
 
   const telefono = orden!.cliente.telefono.replace(/\D/g, '')
   const waLink = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`

@@ -7,7 +7,15 @@ export async function findChecklistByToken(token: string) {
   const chk = await prisma.checklistRecepcion.findUnique({
     where: { tokenAprobacion: token },
     include: {
-      orden: { include: { cliente: true, marca: true, modelo: true, tecnico: { select: { nombre: true } } } },
+      orden: {
+        include: {
+          cliente: true,
+          marca: true,
+          modelo: true,
+          tecnico: { select: { nombre: true } },
+          fotos: { orderBy: { createdAt: 'asc' }, select: { url: true } },
+        },
+      },
     },
   })
   if (!chk) return null
@@ -21,6 +29,7 @@ export async function findChecklistByToken(token: string) {
     placa: o.placa,
     kilometraje: o.kilometraje,
     tecnico: o.tecnico.nombre,
+    fotos: o.fotos.map(f => f.url),
     testigos: chk.testigos,
     testigoOtro: chk.testigoOtro,
     anormalidades: chk.anormalidades,

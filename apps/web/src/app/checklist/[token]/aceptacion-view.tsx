@@ -12,6 +12,7 @@ interface ChecklistData {
   placa: string
   kilometraje: number
   tecnico: string
+  fotos: string[]
   testigos: string[]
   testigoOtro: string | null
   anormalidades: string[]
@@ -133,6 +134,29 @@ export function AceptacionView({ token }: { token: string }) {
             <p className="text-sm text-white mt-0.5">{data.kilometraje.toLocaleString('es-HN')} km</p>
           </div>
         </div>
+
+        {/* Fotos de ingreso */}
+        {data.fotos.length > 0 && (
+          <div className="bg-gray-900 rounded-xl p-4 space-y-2">
+            <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+              Fotos de ingreso ({data.fotos.length})
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {data.fotos.map((url, i) => (
+                <a
+                  key={url}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block aspect-square rounded-lg overflow-hidden bg-gray-800"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`Foto de ingreso ${i + 1}`} className="w-full h-full object-cover" />
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Testigos del tablero */}
         <div className="bg-gray-900 rounded-xl p-4 space-y-2">

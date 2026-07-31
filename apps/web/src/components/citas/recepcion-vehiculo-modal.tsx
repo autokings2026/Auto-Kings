@@ -276,16 +276,16 @@ export function RecepcionVehiculoModal({ citaId, clienteNombre, vehiculo, onClos
 
                   <div className="pt-2 border-t border-surface-2">
                     <p className="text-xs text-muted-foreground mb-2">Si el cliente está presente y acepta de palabra, registra la respuesta directamente:</p>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         variant="default"
                         onClick={() => registrarAceptacion(true)}
                         disabled={registrando}
-                        className="bg-green-600 hover:bg-green-500 text-white"
+                        className="bg-green-600 hover:bg-green-500 text-white w-full sm:w-auto"
                       >
                         {registrando ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle className="h-4 w-4 mr-1" />Cliente aceptó en persona</>}
                       </Button>
-                      <Button variant="destructive" onClick={() => registrarAceptacion(false)} disabled={registrando}>
+                      <Button variant="destructive" onClick={() => registrarAceptacion(false)} disabled={registrando} className="w-full sm:w-auto">
                         <XCircle className="h-4 w-4 mr-1" />Cliente rechazó
                       </Button>
                     </div>
