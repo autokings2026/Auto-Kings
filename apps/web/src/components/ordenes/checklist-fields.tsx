@@ -16,11 +16,11 @@ export function CheckboxGrid({
   readonly: boolean
 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 items-stretch">
       {items.map(item => (
         <label
           key={item}
-          className={`flex items-center gap-2 text-sm px-2.5 py-1.5 rounded-lg border cursor-pointer transition-colors ${
+          className={`flex items-start gap-2 text-sm px-2.5 py-2 min-h-[2.75rem] rounded-lg border cursor-pointer transition-colors leading-snug ${
             selected.includes(item)
               ? 'border-accent/40 bg-accent/10 text-white'
               : 'border-surface-2 bg-surface-2/40 text-muted-foreground hover:text-foreground'
@@ -31,9 +31,9 @@ export function CheckboxGrid({
             checked={selected.includes(item)}
             onChange={() => !readonly && onToggle(item)}
             disabled={readonly}
-            className="accent-secondary h-3.5 w-3.5 shrink-0"
+            className="accent-secondary h-3.5 w-3.5 shrink-0 mt-0.5"
           />
-          {item}
+          <span>{item}</span>
         </label>
       ))}
     </div>

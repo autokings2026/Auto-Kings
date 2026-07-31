@@ -310,11 +310,12 @@ export function RecepcionVehiculoModal({ citaId, clienteNombre, vehiculo, onClos
           )}
         </div>
 
-        {/* Footer */}
-        {otId && (
+        {/* Footer — solo aparece una vez guardado el checklist, para no invitar a
+            saltarse el paso de inspección/aprobación */}
+        {checklistSaved && (
           <div className="flex justify-end gap-3 px-5 py-4 border-t border-surface-2 sticky bottom-0 bg-surface">
-            <Button variant="primary" onClick={finalizar}>
-              Ir a la Orden de Trabajo <ArrowRight className="h-4 w-4 ml-1" />
+            <Button variant={aceptado === true ? 'primary' : 'outline'} onClick={finalizar}>
+              {aceptado === true ? <>Ir a la Orden de Trabajo <ArrowRight className="h-4 w-4 ml-1" /></> : 'Cerrar y continuar después'}
             </Button>
           </div>
         )}
