@@ -5,6 +5,7 @@ import { Search, Loader2, CheckCircle2, Clock, AlertCircle, Car } from 'lucide-r
 
 type EstadoCita = 'PENDIENTE' | 'CONFIRMADA' | 'CANCELADA' | 'CONVERTIDA' | 'NO_ASISTIO'
 type FaseOT = 'LLEGADA_FOTOS' | 'DIAGNOSTICO' | 'REPARACION' | 'CONTROL_CALIDAD' | 'ENTREGA' | 'COMPLETADA'
+type EstadoOT = 'ACTIVA' | 'EN_ESPERA_APROBACION' | 'RECHAZADA_COTIZACION' | 'COMPLETADA' | 'CANCELADA'
 
 interface CitaResult {
   fecha: string
@@ -21,8 +22,10 @@ interface OTResult {
   modelo: string
   anio: number
   faseActual: FaseOT
+  estado: EstadoOT
   tecnico: string
   actualizadoEn: string
+  entregadoEn: string | null
 }
 
 interface ApiResult {
@@ -45,6 +48,13 @@ const LABEL_ESTADO_CITA: Record<EstadoCita, string> = {
   CANCELADA: 'Cancelada',
   CONVERTIDA: 'En proceso',
   NO_ASISTIO: 'No asistió',
+}
+
+// Solo para los estados que no son el flujo normal (ACTIVA se refleja con la
+// barra de fases; COMPLETADA tiene su propia tarjeta de "entregado").
+const LABEL_ESTADO_OT: Partial<Record<EstadoOT, string>> = {
+  EN_ESPERA_APROBACION: 'Esperando tu aprobación de la cotización',
+  RECHAZADA_COTIZACION: 'Cotización rechazada',
 }
 
 export function SeguimientoWidget() {
@@ -160,8 +170,35 @@ export function SeguimientoWidget() {
         </div>
       )}
 
-      {/* Resultado — OT activa */}
-      {result?.ot && (
+      {/* Resultado — OT completada / entregada */}
+      {result?.ot && result.ot.estado === 'COMPLETADA' && (
+        <div className="rounded-xl border border-green-400/30 bg-green-400/5 p-5 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-green-400" />
+              <span className="text-sm font-semibold text-white">Orden de Trabajo {result.ot.numero}</span>
+            </div>
+            <span className="text-xs text-white/40">
+              Técnico: <span className="text-white">{result.ot.tecnico}</span>
+            </span>
+          </div>
+          <div className="text-sm text-white/60">
+            {result.ot.marca} {result.ot.modelo} {result.ot.anio}
+          </div>
+          <div className="rounded-lg bg-green-400/10 border border-green-400/20 px-4 py-3">
+            <p className="text-sm font-semibold text-green-300">✓ Trabajo finalizado — vehículo entregado</p>
+            <p className="text-xs text-white/40 mt-1">
+              Entregado el{' '}
+              {new Date(result.ot.entregadoEn ?? result.ot.actualizadoEn).toLocaleString('es-HN', {
+                day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+              })}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Resultado — OT en curso */}
+      {result?.ot && result.ot.estado !== 'COMPLETADA' && (
         <div className="rounded-xl border border-[#1e3a8a]/40 bg-white/5 p-5 space-y-5">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
@@ -176,6 +213,12 @@ export function SeguimientoWidget() {
           <div className="text-sm text-white/60">
             {result.ot.marca} {result.ot.modelo} {result.ot.anio}
           </div>
+
+          {LABEL_ESTADO_OT[result.ot.estado] && (
+            <div className="text-xs font-medium text-amber-300 bg-amber-400/10 border border-amber-400/20 rounded-lg px-3 py-2 inline-block">
+              {LABEL_ESTADO_OT[result.ot.estado]}
+            </div>
+          )}
 
           {/* Barra de fases */}
           <div className="space-y-3">

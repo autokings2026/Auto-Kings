@@ -24,8 +24,10 @@ export async function GET(req: NextRequest) {
       modelo: string
       anio: number
       faseActual: string
+      estado: string
       tecnico: string
       actualizadoEn: string
+      entregadoEn: string | null
     }
   } = {}
 
@@ -57,21 +59,26 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Buscar OT activa para esa placa
+  // Buscar la OT más reciente para esa placa. Se incluyen todos los estados
+  // salvo CANCELADA para que el cliente siga viendo el estatus (incluyendo
+  // "completada / entregado") en vez de que la búsqueda deje de encontrarla
+  // apenas se marca como COMPLETADA.
   const ot = await prisma.ordenTrabajo.findFirst({
     where: {
       placa: { equals: placa, mode: 'insensitive' },
-      estado: 'ACTIVA',
+      estado: { in: ['ACTIVA', 'EN_ESPERA_APROBACION', 'RECHAZADA_COTIZACION', 'COMPLETADA'] },
     },
     orderBy: { updatedAt: 'desc' },
     select: {
       numero: true,
       anio: true,
       faseActual: true,
+      estado: true,
       updatedAt: true,
       marca: { select: { nombre: true } },
       modelo: { select: { nombre: true } },
       tecnico: { select: { nombre: true } },
+      entrega: { select: { entregadoEn: true } },
     },
   })
 
@@ -82,8 +89,10 @@ export async function GET(req: NextRequest) {
       modelo: ot.modelo.nombre,
       anio: ot.anio,
       faseActual: ot.faseActual,
+      estado: ot.estado,
       tecnico: ot.tecnico.nombre,
       actualizadoEn: ot.updatedAt.toISOString(),
+      entregadoEn: ot.entrega?.entregadoEn?.toISOString() ?? null,
     }
   }
 

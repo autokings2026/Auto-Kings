@@ -171,10 +171,10 @@ export default function AdminEncuestasPage() {
                       <span className="text-xs text-muted-foreground">— {e.vehiculo} · {e.placa}</span>
                       <span className="text-xs text-muted-foreground/60 font-mono">{e.ordenNumero}</span>
                     </div>
-                    <div className="flex items-center gap-4 mb-2 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">Calidad <Estrellas value={e.calidad} /></span>
-                      <span className="flex items-center gap-1">Tiempo <Estrellas value={e.tiempo} /></span>
-                      <span className="flex items-center gap-1">Atención <Estrellas value={e.atencion} /></span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1 whitespace-nowrap">Calidad <Estrellas value={e.calidad} /></span>
+                      <span className="flex items-center gap-1 whitespace-nowrap">Tiempo <Estrellas value={e.tiempo} /></span>
+                      <span className="flex items-center gap-1 whitespace-nowrap">Atención <Estrellas value={e.atencion} /></span>
                     </div>
                     {e.comentario && (
                       <p className="text-sm text-muted-foreground leading-relaxed">&ldquo;{e.comentario}&rdquo;</p>
