@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
+import { PushToggle } from '@/components/push/push-toggle'
 
 interface NavItem {
   href: string
@@ -175,6 +176,9 @@ export function AppSidebar({ user, onClose }: AppSidebarProps) {
           <span className="mt-1 inline-block rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-medium text-accent border border-primary/20">
             {LABEL_ROL[user.rol]}
           </span>
+        </div>
+        <div className="mb-2">
+          <PushToggle />
         </div>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { sendConfirmacionCita, sendRecordatorioCita } from '@/lib/email'
 import { findOrCreateCliente } from '@/lib/services/clientes'
+import { notificarATodoElEquipo } from '@/lib/services/push'
 import { EstadoCita } from '@kings/shared'
 import type { HorarioDia } from '@kings/shared'
 
@@ -106,6 +107,14 @@ export async function createCita(dto: {
     }
   }
 
+  // Notificación push al equipo — no debe hacer fallar la creación de la cita.
+  notificarATodoElEquipo({
+    title: 'Nueva cita agendada',
+    body: `${cliente.nombre} — ${marca.nombre} ${modelo.nombre} (${cita.placa}) el ${formatFecha(cita.fecha)} a las ${formatHora(cita.hora)}`,
+    url: '/citas',
+    tag: 'nueva-cita',
+  }).catch((err) => console.error('[Citas] Error enviando notificación push:', err))
+
   return {
     id: cita.id,
     mensaje: 'Cita registrada exitosamente',
@@ -154,6 +163,14 @@ export async function createCitaManual(dto: {
     },
     include: { cliente: true, marca: true, modelo: true },
   })
+
+  // Notificación push al equipo — no debe hacer fallar la creación de la cita.
+  notificarATodoElEquipo({
+    title: 'Cliente sin cita registrado',
+    body: `${cliente.nombre} — ${marca.nombre} ${modelo.nombre} (${cita.placa}) — recepción a las ${formatHora(cita.hora)}`,
+    url: '/citas',
+    tag: 'nueva-cita',
+  }).catch((err) => console.error('[Citas] Error enviando notificación push:', err))
 
   return {
     id: cita.id,
