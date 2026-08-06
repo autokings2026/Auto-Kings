@@ -3,7 +3,19 @@ import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoginForm } from '@/components/auth/login-form'
 
-export const metadata = { title: 'Iniciar sesión — Kings Auto Diagnósticos' }
+// Usa el manifest del panel (start_url "/dashboard") — si alguien agrega
+// esta pantalla a su inicio antes de iniciar sesión, el ícono debe abrir el
+// panel (que redirige a /login automáticamente si no hay sesión), no la
+// landing pública.
+export const metadata = {
+  title: 'Iniciar sesión — Kings Auto Diagnósticos',
+  manifest: '/manifest-app.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent' as const,
+    title: 'Kings Auto Panel',
+  },
+}
 
 export default function LoginPage() {
   return (

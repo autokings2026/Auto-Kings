@@ -1,0 +1,18 @@
+{
+  "name": "Kings Auto — Panel",
+  "short_name": "Kings Auto Panel",
+  "description": "Panel administrativo de Kings Auto Diagnósticos",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo-dark.jpeg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

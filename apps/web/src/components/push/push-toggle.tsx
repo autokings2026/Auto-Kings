@@ -1,11 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, BellOff, BellRing, Loader2 } from 'lucide-react'
+import { Bell, BellOff, BellRing, Loader2, Share } from 'lucide-react'
 
-type Estado = 'cargando' | 'no-soportado' | 'bloqueado' | 'activo' | 'inactivo'
+type Estado = 'cargando' | 'no-soportado' | 'ios-instalar' | 'ios-viejo' | 'bloqueado' | 'activo' | 'inactivo'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? ''
+
+// Safari en iOS solo expone la Push API cuando el sitio corre como app
+// instalada desde la pantalla de inicio (display-mode: standalone) — en una
+// pestaña normal del navegador `PushManager` ni existe, sin importar el
+// permiso. Detectamos esto para mostrar instrucciones en vez de no mostrar
+// nada (que es lo que pasaba antes y hacía parecer que el botón faltaba).
+function isIOS() {
+  if (typeof navigator === 'undefined') return false
+  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) // iPadOS 13+
+}
+
+function isStandalone() {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator as unknown as { standalone?: boolean }).standalone === true
+}
 
 // El navegador exige la llave pública VAPID como Uint8Array, no como string.
 function urlBase64ToUint8Array(base64String: string) {
@@ -22,8 +39,13 @@ export function PushToggle() {
 
   useEffect(() => {
     const check = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
-        setEstado('no-soportado')
+      const soportado = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
+      if (!soportado) {
+        if (isIOS()) {
+          setEstado(isStandalone() ? 'ios-viejo' : 'ios-instalar')
+        } else {
+          setEstado('no-soportado')
+        }
         return
       }
       if (Notification.permission === 'denied') {
@@ -102,10 +124,34 @@ export function PushToggle() {
     }
   }
 
-  if (estado === 'cargando' || estado === 'no-soportado') return null
+  if (estado === 'cargando') return null
 
   return (
     <div>
+      {estado === 'ios-instalar' && (
+        <p className="flex items-start gap-2 text-[11px] text-muted-foreground leading-snug">
+          <Share className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            En iPhone: toca <strong>Compartir</strong> → <strong>&quot;Agregar a inicio&quot;</strong> y abre la
+            app desde ese ícono para poder activar las notificaciones.
+          </span>
+        </p>
+      )}
+
+      {estado === 'ios-viejo' && (
+        <p className="flex items-center gap-2 text-[11px] text-muted-foreground leading-snug">
+          <BellOff className="h-3.5 w-3.5 shrink-0" />
+          Tu versión de iOS no soporta notificaciones push (necesitas iOS 16.4 o más reciente).
+        </p>
+      )}
+
+      {estado === 'no-soportado' && (
+        <p className="flex items-center gap-2 text-[11px] text-muted-foreground leading-snug">
+          <BellOff className="h-3.5 w-3.5 shrink-0" />
+          Este navegador no soporta notificaciones push.
+        </p>
+      )}
+
       {estado === 'bloqueado' && (
         <p className="flex items-center gap-2 text-[11px] text-muted-foreground leading-snug">
           <BellOff className="h-3.5 w-3.5 shrink-0" />
