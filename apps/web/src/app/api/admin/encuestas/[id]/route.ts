@@ -5,7 +5,7 @@ import { RolUsuario } from '@kings/shared'
 import { aprobarEncuesta, rechazarEncuesta } from '@/lib/services/encuestas'
 
 const BodySchema = z.discriminatedUnion('accion', [
-  z.object({ accion: z.literal('aprobar') }),
+  z.object({ accion: z.literal('aprobar'), comentario: z.string().max(1000).optional() }),
   z.object({
     accion: z.literal('rechazar'),
     requiereLlamada: z.boolean(),
@@ -30,7 +30,7 @@ export async function PATCH(
 
   try {
     const result = parsed.data.accion === 'aprobar'
-      ? await aprobarEncuesta(id, user.id)
+      ? await aprobarEncuesta(id, user.id, parsed.data.comentario)
       : await rechazarEncuesta(id, {
           requiereLlamada: parsed.data.requiereLlamada,
           notasSeguimiento: parsed.data.notasSeguimiento,

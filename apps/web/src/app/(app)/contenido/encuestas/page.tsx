@@ -57,6 +57,7 @@ export default function AdminEncuestasPage() {
   const [requiereLlamada, setRequiereLlamada] = useState(false)
   const [notas, setNotas] = useState('')
   const [cortesiaSel, setCortesiaSel] = useState<Record<string, string>>({})
+  const [comentarioManual, setComentarioManual] = useState<Record<string, string>>({})
 
   const cargar = useCallback(() => {
     setLoading(true)
@@ -69,13 +70,13 @@ export default function AdminEncuestasPage() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const aprobar = async (id: string) => {
+  const aprobar = async (id: string, comentarioSinRespuesta?: string) => {
     setProcesando(id)
     try {
       const res = await fetch(`/api/admin/encuestas/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ accion: 'aprobar' }),
+        body: JSON.stringify({ accion: 'aprobar', comentario: comentarioSinRespuesta || undefined }),
       })
       if (!res.ok) { const e = await res.json(); alert(e.message); return }
       cargar()
@@ -176,8 +177,21 @@ export default function AdminEncuestasPage() {
                       <span className="flex items-center gap-1 whitespace-nowrap">Tiempo <Estrellas value={e.tiempo} /></span>
                       <span className="flex items-center gap-1 whitespace-nowrap">Atención <Estrellas value={e.atencion} /></span>
                     </div>
-                    {e.comentario && (
+                    {e.comentario ? (
                       <p className="text-sm text-muted-foreground leading-relaxed">&ldquo;{e.comentario}&rdquo;</p>
+                    ) : e.estadoRevision === 'PENDIENTE' && (
+                      <div className="space-y-1">
+                        <p className="text-xs text-amber-400/80 italic">
+                          El cliente no dejó comentario escrito — solo calificó con estrellas.
+                        </p>
+                        <textarea
+                          value={comentarioManual[e.id] ?? ''}
+                          onChange={ev => setComentarioManual(prev => ({ ...prev, [e.id]: ev.target.value }))}
+                          rows={2}
+                          placeholder="Escribe un comentario en su nombre para poder publicar la reseña (opcional)…"
+                          className="w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-xs text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary resize-none"
+                        />
+                      </div>
                     )}
                     {e.respondidoEn && (
                       <p className="text-xs text-muted-foreground/60 mt-2">
@@ -196,9 +210,9 @@ export default function AdminEncuestasPage() {
                 {e.estadoRevision === 'PENDIENTE' && rechazando !== e.id && (
                   <div className="flex items-center gap-2 pt-2 border-t border-border">
                     <button
-                      onClick={() => aprobar(e.id)}
-                      disabled={procesando === e.id || !e.comentario}
-                      title={!e.comentario ? 'No hay comentario para publicar' : undefined}
+                      onClick={() => aprobar(e.id, comentarioManual[e.id])}
+                      disabled={procesando === e.id || !(e.comentario || comentarioManual[e.id]?.trim())}
+                      title={!(e.comentario || comentarioManual[e.id]?.trim()) ? 'Escribe un comentario arriba para poder publicar' : undefined}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 text-xs font-medium transition-colors disabled:opacity-50"
                     >
                       {procesando === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}

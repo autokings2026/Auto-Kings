@@ -118,7 +118,7 @@ export async function listEncuestasRevision(params: {
 
 // ── Aprobar (publica como reseña) ────────────────────────────────────────────────
 
-export async function aprobarEncuesta(id: string, userId: string) {
+export async function aprobarEncuesta(id: string, userId: string, comentarioOverride?: string) {
   const enc = await prisma.encuestaSatisfaccion.findUnique({
     where: { id },
     include: { orden: { include: { cliente: true, marca: true, modelo: true } } },
@@ -126,7 +126,13 @@ export async function aprobarEncuesta(id: string, userId: string) {
   if (!enc) notFound('Encuesta no encontrada')
   if (!enc.respondidoEn) badRequest('La encuesta aún no ha sido respondida por el cliente')
   if (enc.estadoRevision !== 'PENDIENTE') badRequest('Esta encuesta ya fue revisada')
-  if (!enc.comentario?.trim()) badRequest('No se puede publicar una reseña sin comentario del cliente')
+
+  // El cliente puede haber calificado con estrellas sin escribir comentario.
+  // En ese caso el staff puede redactar uno (ej. lo que dijo por telefono)
+  // para poder publicar igual la reseña; si no hay ninguno, no se puede
+  // publicar (la reseña pública siempre necesita un texto).
+  const comentarioFinal = enc.comentario?.trim() || comentarioOverride?.trim()
+  if (!comentarioFinal) badRequest('No se puede publicar una reseña sin comentario del cliente')
 
   const promedio = Math.round(
     ((enc.calidad ?? 0) + (enc.tiempo ?? 0) + (enc.atencion ?? 0)) / 3,
@@ -141,7 +147,7 @@ export async function aprobarEncuesta(id: string, userId: string) {
         vehiculoAnio: enc.orden.anio,
         placa: enc.orden.placa,
         calificacion: promedio,
-        comentario: enc.comentario!,
+        comentario: comentarioFinal,
         estado: 'APROBADA',
       },
     })
@@ -159,7 +165,9 @@ export async function aprobarEncuesta(id: string, userId: string) {
       data: {
         ordenId: enc.ordenId,
         tipo: TipoEventoOT.ENCUESTA_APROBADA,
-        descripcion: 'Comentario de la encuesta aprobado por el staff y publicado como reseña en el sitio web.',
+        descripcion: enc.comentario?.trim()
+          ? 'Comentario de la encuesta aprobado por el staff y publicado como reseña en el sitio web.'
+          : 'Encuesta aprobada y publicada como reseña con un comentario redactado por el staff (el cliente no dejó uno).',
         realizadoPorId: userId,
       },
     })
