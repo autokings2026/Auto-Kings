@@ -313,6 +313,16 @@ export async function avanzarFase(id: string, userId: string) {
     if (!rep?.finalizadaEn) badRequest('Finaliza la reparación antes de avanzar a Control de Calidad')
   }
 
+  // Control de Calidad y Entrega tienen su propio endpoint (registrarCC / registrarEntrega)
+  // que valida la aprobación correspondiente y hace la transición de fase por su cuenta.
+  // Este endpoint genérico NUNCA debe saltarse esas aprobaciones.
+  if (orden!.faseActual === FaseOT.CONTROL_CALIDAD) {
+    badRequest('Registra el resultado de Control de Calidad para avanzar')
+  }
+  if (orden!.faseActual === FaseOT.ENTREGA) {
+    badRequest('Registra la entrega del vehículo para completar la OT')
+  }
+
   const nuevoEstado = siguienteFase === FaseOT.COMPLETADA ? EstadoOT.COMPLETADA : orden!.estado
 
   return prisma.$transaction(async (tx) => {
