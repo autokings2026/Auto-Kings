@@ -8,7 +8,7 @@ const SubmitSchema = z.object({
   calidad:    z.number().int().min(1).max(5),
   tiempo:     z.number().int().min(1).max(5),
   atencion:   z.number().int().min(1).max(5),
-  comentario: z.string().optional(),
+  comentario: z.string().trim().min(1, 'Por favor déjanos un comentario antes de enviar.'),
 })
 
 export async function GET(
@@ -81,7 +81,7 @@ export async function POST(
       calidad:      parsed.data.calidad,
       tiempo:       parsed.data.tiempo,
       atencion:     parsed.data.atencion,
-      comentario:   parsed.data.comentario ?? null,
+      comentario:   parsed.data.comentario,
       respondidoEn: new Date(),
     },
   })

@@ -84,6 +84,16 @@ export async function createCita(dto: {
     include: { cliente: true, marca: true, modelo: true },
   })
 
+  // Notificación push al equipo — se dispara ANTES del email y sin esperarlo:
+  // el equipo debe enterarse de la cita nueva de inmediato, no después de que
+  // el proveedor de email (a veces lento) termine de responder.
+  notificarATodoElEquipo({
+    title: 'Nueva cita agendada',
+    body: `${cliente.nombre} — ${marca.nombre} ${modelo.nombre} (${cita.placa}) el ${formatFecha(cita.fecha)} a las ${formatHora(cita.hora)}`,
+    url: '/citas',
+    tag: 'nueva-cita',
+  }).catch((err) => console.error('[Citas] Error enviando notificación push:', err))
+
   // El envío del email de confirmación no debe hacer fallar la creación de la
   // cita (ej. credenciales de Gmail inválidas/expiradas) — la cita ya quedó
   // guardada en la base de datos, así que un error de email solo se registra.
@@ -106,14 +116,6 @@ export async function createCita(dto: {
       console.error('[Citas] La cita se creó pero el email de confirmación falló:', err)
     }
   }
-
-  // Notificación push al equipo — no debe hacer fallar la creación de la cita.
-  notificarATodoElEquipo({
-    title: 'Nueva cita agendada',
-    body: `${cliente.nombre} — ${marca.nombre} ${modelo.nombre} (${cita.placa}) el ${formatFecha(cita.fecha)} a las ${formatHora(cita.hora)}`,
-    url: '/citas',
-    tag: 'nueva-cita',
-  }).catch((err) => console.error('[Citas] Error enviando notificación push:', err))
 
   return {
     id: cita.id,

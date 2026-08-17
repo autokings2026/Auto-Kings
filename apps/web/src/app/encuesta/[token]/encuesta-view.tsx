@@ -98,13 +98,17 @@ export function EncuestaView({ token }: { token: string }) {
       setFormError('Por favor califica las tres categorías antes de enviar.')
       return
     }
+    if (comentario.trim() === '') {
+      setFormError('Por favor déjanos un comentario antes de enviar.')
+      return
+    }
     setSubmitting(true)
     setFormError('')
     try {
       const res = await fetch(`/api/encuesta/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ calidad, tiempo, atencion, comentario: comentario.trim() || undefined }),
+        body: JSON.stringify({ calidad, tiempo, atencion, comentario: comentario.trim() }),
       })
       if (!res.ok) {
         const e = await res.json()
@@ -204,14 +208,15 @@ export function EncuestaView({ token }: { token: string }) {
 
         {/* Comentario */}
         <div className="space-y-2">
-          <p className="text-sm text-gray-400">¿Algún comentario adicional? <span className="text-gray-600">(opcional)</span></p>
+          <p className="text-sm text-gray-400">Cuéntenos sobre su experiencia <span className="text-red-400">*</span></p>
           <textarea
             value={comentario}
             onChange={e => setComentario(e.target.value)}
             disabled={yaRespondido}
             rows={3}
+            required
             className="w-full bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none disabled:opacity-60"
-            placeholder="Cuéntenos cómo mejorar nuestro servicio…"
+            placeholder="Cuéntenos cómo fue su experiencia con nosotros…"
           />
         </div>
 
@@ -221,7 +226,7 @@ export function EncuestaView({ token }: { token: string }) {
         {!yaRespondido && (
           <Button
             onClick={submit}
-            disabled={submitting || calidad === 0 || tiempo === 0 || atencion === 0}
+            disabled={submitting || calidad === 0 || tiempo === 0 || atencion === 0 || comentario.trim() === ''}
             className="w-full h-14 text-base font-semibold rounded-xl bg-amber-500 hover:bg-amber-400 text-gray-950"
           >
             {submitting
