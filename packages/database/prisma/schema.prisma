@@ -77,6 +77,11 @@ enum TipoEventoOT {
   // Reparación
   REPARACION_INICIADA
   REPARACION_FINALIZADA
+  // Cotización adicional (partes/servicios no previstos, descubiertos durante la reparación)
+  COTIZACION_ADICIONAL_GENERADA
+  COTIZACION_ADICIONAL_ENVIADA_WA
+  COTIZACION_ADICIONAL_APROBADA
+  COTIZACION_ADICIONAL_RECHAZADA
   // Control de calidad
   CC_APROBADO
   CC_RECHAZADO        // regresa a REPARACION con observación
@@ -160,6 +165,7 @@ model User {
   eventosGenerados        EventoOT[]
   encuestasRevisadas      EncuestaSatisfaccion[]
   pushSubscriptions       PushSubscription[]
+  cotizacionesAdicionalesCreadas CotizacionAdicional[] @relation("CotizacionAdicionalCreador")
 
   @@map("users")
 }
@@ -280,6 +286,7 @@ model OrdenTrabajo {
   fotosReparacion    FotoReparacion[]
   checklistRecepcion ChecklistRecepcion?
   diagnostico        DiagnosticoCotizacion?
+  cotizacionesAdicionales CotizacionAdicional[]
   reparacion      Reparacion?
   controlesCC     ControlCalidad[]       // puede haber varios (si hay rechazos y reintento)
   entrega         Entrega?
@@ -411,6 +418,54 @@ model ItemCotizacion {
 
   @@index([cotizacionId])
   @@map("items_cotizacion")
+}
+
+// Cotización adicional: partes/servicios que no estaban en la cotización
+// original y que el técnico descubre que hacen falta ya durante la
+// reparación. No modifica DiagnosticoCotizacion (esa queda intacta como el
+// documento que el cliente ya aprobó) — es un addendum aparte, con su propio
+// link de aprobación. Puede haber varias por OT. El paquete se aprueba o
+// rechaza completo (no por ítem).
+model CotizacionAdicional {
+  id                String    @id @default(cuid())
+  ordenId           String    // sin @unique: puede haber más de una addendum por OT
+  motivo            String    @db.Text // por qué no se incluyó en la cotización original
+  totalMateriales   Decimal   @db.Decimal(12, 2) @default(0)
+  totalPartes       Decimal   @db.Decimal(12, 2) @default(0)
+  totalManoObra     Decimal   @db.Decimal(12, 2) @default(0)
+  totalGeneral      Decimal   @db.Decimal(12, 2) @default(0)
+  tokenAprobacion   String    @unique @default(dbgenerated("gen_random_uuid()::text"))
+  aprobado          Boolean?  // null=pendiente, true=aprobado, false=rechazado — todo el paquete junto
+  fechaAprobacion   DateTime?
+  mensajeAprobacion String?   @db.Text
+  creadoPorId       String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relaciones
+  orden   OrdenTrabajo               @relation(fields: [ordenId], references: [id], onDelete: Cascade)
+  creador User                       @relation("CotizacionAdicionalCreador", fields: [creadoPorId], references: [id], onDelete: Restrict)
+  items   ItemCotizacionAdicional[]
+
+  @@index([ordenId])
+  @@map("cotizaciones_adicionales")
+}
+
+model ItemCotizacionAdicional {
+  id             String             @id @default(cuid())
+  cotizacionId   String
+  descripcion    String
+  tipo           TipoItemCotizacion
+  cantidad       Decimal            @db.Decimal(10, 2)
+  precioUnitario Decimal            @db.Decimal(12, 2)
+  subtotal       Decimal            @db.Decimal(12, 2)
+  posicion       Int                @default(0)
+
+  // Relaciones
+  cotizacion CotizacionAdicional @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+  @@index([cotizacionId])
+  @@map("items_cotizacion_adicional")
 }
 
 // ─────────────────────────────────────────

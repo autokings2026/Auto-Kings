@@ -70,6 +70,29 @@ export interface OrdenDetalle {
       posicion: number
     }[]
   } | null
+  cotizacionesAdicionales: {
+    id: string
+    motivo: string
+    totalMateriales: string
+    totalPartes: string
+    totalManoObra: string
+    totalGeneral: string
+    tokenAprobacion: string
+    aprobado: boolean | null
+    fechaAprobacion: string | null
+    mensajeAprobacion: string | null
+    createdAt: string
+    creador: { nombre: string }
+    items: {
+      id: string
+      descripcion: string
+      tipo: string
+      cantidad: string
+      precioUnitario: string
+      subtotal: string
+      posicion: number
+    }[]
+  }[]
   reparacion: {
     id: string
     notas: string | null
