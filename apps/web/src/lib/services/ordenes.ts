@@ -83,6 +83,16 @@ export interface RegistrarEntregaInput {
   entregadoEn?: string
 }
 
+export interface CrearCotizacionAdicionalInput {
+  motivo: string
+  items: ItemInput[]
+}
+
+export interface ResponderCotizacionAdicionalInput {
+  aprobado: boolean
+  mensaje?: string
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function badRequest(msg: string): never {
@@ -264,6 +274,10 @@ export async function findOneOrden(id: string) {
       fotosReparacion: { orderBy: { createdAt: 'asc' } },
       checklistRecepcion: true,
       diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
+      cotizacionesAdicionales: {
+        orderBy: { createdAt: 'asc' },
+        include: { items: { orderBy: { posicion: 'asc' } }, creador: { select: { id: true, nombre: true } } },
+      },
       reparacion: { include: { tecnico: { select: { id: true, nombre: true } } } },
       controlesCC: {
         orderBy: { revisadoEn: 'asc' },
@@ -664,6 +678,11 @@ export async function saveReparacion(id: string, dto: SaveReparacionInput, userI
   if (!orden) notFound('OT no encontrada')
   if (orden!.faseActual !== FaseOT.REPARACION) badRequest('La OT no está en fase de Reparación')
 
+  if (dto.finalizada) {
+    const pendiente = await prisma.cotizacionAdicional.findFirst({ where: { ordenId: id, aprobado: null } })
+    if (pendiente) badRequest('Hay una cotización adicional pendiente de respuesta del cliente')
+  }
+
   return prisma.$transaction(async (tx) => {
     const rep = await tx.reparacion.upsert({
       where: { ordenId: id },
@@ -843,6 +862,128 @@ export async function getWhatsappCotizacion(id: string) {
   })
 
   return { waLink, linkAprobacion, mensaje }
+}
+
+// ── Cotización adicional (partes/servicios no previstos en Reparación) ────────
+// No toca DiagnosticoCotizacion — es un addendum aparte con su propio link de
+// aprobación. Se aprueba/rechaza como paquete completo, no por ítem.
+
+export async function crearCotizacionAdicional(id: string, dto: CrearCotizacionAdicionalInput, userId: string) {
+  const orden = await prisma.ordenTrabajo.findUnique({ where: { id } })
+  if (!orden) notFound('OT no encontrada')
+  if (orden!.faseActual !== FaseOT.REPARACION) {
+    badRequest('Solo se puede agregar una cotización adicional durante la fase de Reparación')
+  }
+
+  const totales = dto.items.reduce(
+    (acc, item) => {
+      const sub = Number(item.cantidad) * Number(item.precioUnitario)
+      if (item.tipo === 'MATERIAL') acc.materiales += sub
+      else if (item.tipo === 'PARTE') acc.partes += sub
+      else acc.manoObra += sub
+      return acc
+    },
+    { materiales: 0, partes: 0, manoObra: 0 },
+  )
+  const totalGeneral = totales.materiales + totales.partes + totales.manoObra
+
+  return prisma.$transaction(async (tx) => {
+    const cot = await tx.cotizacionAdicional.create({
+      data: {
+        ordenId: id,
+        motivo: dto.motivo,
+        totalMateriales: totales.materiales,
+        totalPartes: totales.partes,
+        totalManoObra: totales.manoObra,
+        totalGeneral,
+        creadoPorId: userId,
+        items: {
+          create: dto.items.map((item, i) => ({
+            descripcion: item.descripcion,
+            tipo: item.tipo,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            subtotal: Number(item.cantidad) * Number(item.precioUnitario),
+            posicion: item.posicion ?? i,
+          })),
+        },
+      },
+      include: { items: { orderBy: { posicion: 'asc' } } },
+    })
+
+    await tx.eventoOT.create({
+      data: {
+        ordenId: id,
+        tipo: TipoEventoOT.COTIZACION_ADICIONAL_GENERADA,
+        descripcion: `Cotización adicional registrada. Total: L. ${totalGeneral.toFixed(2)}. Motivo: ${dto.motivo}`,
+        realizadoPorId: userId,
+      },
+    })
+
+    return cot
+  })
+}
+
+export async function getWhatsappCotizacionAdicional(id: string, cotizacionAdicionalId: string) {
+  const cot = await prisma.cotizacionAdicional.findUnique({
+    where: { id: cotizacionAdicionalId },
+    include: { orden: { include: { cliente: true, marca: true, modelo: true } } },
+  })
+  if (!cot) notFound('Cotización adicional no encontrada')
+  if (cot!.ordenId !== id) notFound('Cotización adicional no encontrada')
+
+  const orden = cot!.orden
+  const appUrl = process.env['NEXT_PUBLIC_APP_URL'] ?? 'http://localhost:3000'
+  const linkAprobacion = `${appUrl}/cotizacion-adicional/${cot!.tokenAprobacion}`
+  const total = Number(cot!.totalGeneral).toLocaleString('es-HN', { minimumFractionDigits: 2 })
+
+  const mensaje = `Hola ${orden.cliente.nombre}, al reparar su ${orden.marca.nombre} ${orden.modelo.nombre} (placa ${orden.placa}) encontramos que hace falta lo siguiente, no incluido en la cotización original: ${cot!.motivo}. Costo adicional: L. ${total}. Puede aprobar o rechazar aquí: ${linkAprobacion}`
+
+  const telefono = orden.cliente.telefono.replace(/\D/g, '')
+  const waLink = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`
+
+  await prisma.eventoOT.create({
+    data: {
+      ordenId: id,
+      tipo: TipoEventoOT.COTIZACION_ADICIONAL_ENVIADA_WA,
+      descripcion: 'Enlace de cotización adicional generado para envío por WhatsApp.',
+    },
+  })
+
+  return { waLink, linkAprobacion, mensaje }
+}
+
+// Registro manual (staff), ej. el cliente respondió por llamada o WhatsApp de texto.
+export async function registrarRespuestaCotizacionAdicional(
+  id: string,
+  cotizacionAdicionalId: string,
+  dto: ResponderCotizacionAdicionalInput,
+  userId: string,
+) {
+  const cot = await prisma.cotizacionAdicional.findUnique({ where: { id: cotizacionAdicionalId } })
+  if (!cot) notFound('Cotización adicional no encontrada')
+  if (cot!.ordenId !== id) notFound('Cotización adicional no encontrada')
+  if (cot!.aprobado !== null) badRequest('Esta cotización adicional ya fue procesada')
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.cotizacionAdicional.update({
+      where: { id: cotizacionAdicionalId },
+      data: { aprobado: dto.aprobado, fechaAprobacion: new Date(), mensajeAprobacion: dto.mensaje },
+    })
+
+    await tx.eventoOT.create({
+      data: {
+        ordenId: id,
+        tipo: dto.aprobado ? TipoEventoOT.COTIZACION_ADICIONAL_APROBADA : TipoEventoOT.COTIZACION_ADICIONAL_RECHAZADA,
+        descripcion: dto.aprobado
+          ? `Cotización adicional aprobada por el cliente (registrado por el taller). Total: L. ${Number(cot!.totalGeneral).toFixed(2)}`
+          : `Cotización adicional rechazada por el cliente (registrado por el taller).${dto.mensaje ? ` Motivo: ${dto.mensaje}` : ''}`,
+        realizadoPorId: userId,
+      },
+    })
+
+    return updated
+  })
 }
 
 // ── Dashboard Stats ───────────────────────────────────────────────────────────
