@@ -1,15 +1,16 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
 const FROM_NAME = 'Kings Auto Diagnósticos'
 
-function getTransporter() {
-  const user = process.env['GMAIL_USER']
-  const pass = process.env['GMAIL_APP_PASSWORD']?.replace(/\s/g, '')
-  if (!user || !pass) return null
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user, pass },
-  })
+function getResend(): Resend | null {
+  const apiKey = process.env['RESEND_API_KEY']
+  if (!apiKey) return null
+  return new Resend(apiKey)
+}
+
+function getFrom(): string {
+  const email = process.env['RESEND_FROM_EMAIL'] ?? 'onboarding@resend.dev'
+  return `${FROM_NAME} <${email}>`
 }
 
 interface CitaEmailData {
@@ -79,19 +80,20 @@ function htmlConfirmacionCita(d: Omit<CitaEmailData, 'to'>): string {
 }
 
 export async function sendConfirmacionCita(data: CitaEmailData): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) {
-    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — email no enviado a', data.to)
+  const resend = getResend()
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY no configurado — email no enviado a', data.to)
     return
   }
   try {
-    const info = await transporter.sendMail({
-      from: `"${FROM_NAME}" <${process.env['GMAIL_USER']}>`,
+    const { data: result, error } = await resend.emails.send({
+      from: getFrom(),
       to: data.to,
       subject: `✅ Cita confirmada — ${data.fecha} a las ${data.hora}`,
       html: htmlConfirmacionCita(data),
     })
-    console.log('[Email] Confirmación enviada a', data.to, 'messageId:', info.messageId)
+    if (error) throw error
+    console.log('[Email] Confirmación enviada a', data.to, 'id:', result?.id)
   } catch (err) {
     console.error('[Email] Error al enviar confirmación a', data.to, err)
     throw err
@@ -99,9 +101,9 @@ export async function sendConfirmacionCita(data: CitaEmailData): Promise<void> {
 }
 
 export async function sendRecordatorioCita(data: CitaEmailData): Promise<void> {
-  const transporter = getTransporter()
-  if (!transporter) {
-    console.warn('[Email] GMAIL_USER/GMAIL_APP_PASSWORD no configurados — email no enviado a', data.to)
+  const resend = getResend()
+  if (!resend) {
+    console.warn('[Email] RESEND_API_KEY no configurado — email no enviado a', data.to)
     return
   }
   const html = htmlConfirmacionCita(data).replace(
@@ -109,12 +111,13 @@ export async function sendRecordatorioCita(data: CitaEmailData): Promise<void> {
     'es <span style="color:#22d3ee;font-weight:600;">mañana</span> — te enviamos este recordatorio.',
   )
   try {
-    await transporter.sendMail({
-      from: `"${FROM_NAME}" <${process.env['GMAIL_USER']}>`,
+    const { error } = await resend.emails.send({
+      from: getFrom(),
       to: data.to,
       subject: `⏰ Recordatorio — Tu cita es mañana a las ${data.hora}`,
       html,
     })
+    if (error) throw error
     console.log('[Email] Recordatorio enviado a', data.to)
   } catch (err) {
     console.error('[Email] Error al enviar recordatorio a', data.to, err)
