@@ -55,7 +55,10 @@ function CalendarPicker({
   onChange: (date: string) => void
 }) {
   const todayDate = new Date()
-  const todayStr = todayDate.toISOString().split('T')[0]!
+  // OJO: NO usar toISOString() aquí — convierte a UTC, y en Honduras (UTC-6)
+  // desde las 6pm en adelante la fecha en UTC ya es "mañana", lo que marcaba
+  // el día de HOY como pasado/deshabilitado en el calendario por las tardes.
+  const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`
 
   const [view, setView] = useState(() => {
     const base = value ? new Date(value + 'T12:00:00') : todayDate

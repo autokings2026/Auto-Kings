@@ -221,7 +221,11 @@ export function CitasTable() {
                       <div className="text-muted-foreground text-xs">{cita.anio} · {cita.placa}</div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-white">{formatDate(cita.fecha)}</div>
+                      {/* cita.fecha es solo fecha ("YYYY-MM-DD"), sin hora — Date la interpreta
+                          como medianoche UTC. Sin fijar el mediodía, Intl.DateTimeFormat la
+                          renderiza en la zona horaria del navegador y en Honduras (UTC-6) siempre
+                          cae un día atrás. */}
+                      <div className="text-white">{formatDate(`${cita.fecha}T12:00:00`)}</div>
                       <div className="text-muted-foreground text-xs">{cita.hora}</div>
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
