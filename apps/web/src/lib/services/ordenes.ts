@@ -109,10 +109,22 @@ function notFound(msg: string): never {
 
 async function generarNumero(): Promise<string> {
   const year = new Date().getFullYear()
-  const count = await prisma.ordenTrabajo.count({
-    where: { createdAt: { gte: new Date(`${year}-01-01T00:00:00`) } },
+  // Contar filas (count()) es frágil: un huecos en la numeración (una OT
+  // borrada) o una fila con `numero` que no siga el formato "OT-YYYY-NNNN"
+  // (ej. datos de prueba insertados a mano) desalinea el conteo del máximo
+  // correlativo real y calcula un número que ya existe — chocando siempre,
+  // no solo por condición de carrera. Se toma el máximo correlativo real
+  // entre las OTs de este año y se le suma 1.
+  const ordenes = await prisma.ordenTrabajo.findMany({
+    where: { numero: { startsWith: `OT-${year}-` } },
+    select: { numero: true },
   })
-  return `OT-${year}-${String(count + 1).padStart(4, '0')}`
+  const maxActual = ordenes.reduce((max, o) => {
+    const match = /^OT-\d{4}-(\d+)$/.exec(o.numero)
+    const n = match ? parseInt(match[1]!, 10) : 0
+    return n > max ? n : max
+  }, 0)
+  return `OT-${year}-${String(maxActual + 1).padStart(4, '0')}`
 }
 
 // ── Crear OT ─────────────────────────────────────────────────────────────────
