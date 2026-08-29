@@ -9,7 +9,7 @@ import {
   ORDEN_FASES,
   RolUsuario,
 } from '@kings/shared'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -151,46 +151,64 @@ export async function createOrden(dto: CreateOrdenInput, userId: string) {
     placa     = dto.placa!
   }
 
-  const numero = await generarNumero()
+  // generarNumero() cuenta las OTs del año y calcula el siguiente correlativo
+  // FUERA de una transacción — si dos OTs se crean casi al mismo tiempo (dos
+  // recepciones simultáneas), ambas pueden calcular el mismo número antes de
+  // que la primera termine de insertarse, y la segunda choca contra el unique
+  // constraint de `numero`. Se reintenta con un número recalculado en vez de
+  // fallarle al usuario con un error de Prisma.
+  const MAX_INTENTOS = 5
+  for (let intento = 1; intento <= MAX_INTENTOS; intento++) {
+    const numero = await generarNumero()
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const orden = await tx.ordenTrabajo.create({
+          data: {
+            numero,
+            citaId,
+            clienteId,
+            tecnicoId: dto.tecnicoId,
+            marcaId,
+            modeloId,
+            anio,
+            placa: placa.toUpperCase(),
+            color: dto.color,
+            combustible: dto.combustible as Prisma.OrdenTrabajoCreateInput['combustible'],
+            kilometraje: dto.kilometraje,
+          },
+          include: {
+            cliente: true,
+            marca: true,
+            modelo: true,
+            tecnico: { select: { id: true, nombre: true, email: true, rol: true } },
+          },
+        })
 
-  return prisma.$transaction(async (tx) => {
-    const orden = await tx.ordenTrabajo.create({
-      data: {
-        numero,
-        citaId,
-        clienteId,
-        tecnicoId: dto.tecnicoId,
-        marcaId,
-        modeloId,
-        anio,
-        placa: placa.toUpperCase(),
-        color: dto.color,
-        combustible: dto.combustible as Prisma.OrdenTrabajoCreateInput['combustible'],
-        kilometraje: dto.kilometraje,
-      },
-      include: {
-        cliente: true,
-        marca: true,
-        modelo: true,
-        tecnico: { select: { id: true, nombre: true, email: true, rol: true } },
-      },
-    })
+        if (citaId) {
+          await tx.cita.update({ where: { id: citaId }, data: { estado: EstadoCita.CONVERTIDA } })
+        }
 
-    if (citaId) {
-      await tx.cita.update({ where: { id: citaId }, data: { estado: EstadoCita.CONVERTIDA } })
+        await tx.eventoOT.create({
+          data: {
+            ordenId: orden.id,
+            tipo: TipoEventoOT.CREACION_OT,
+            descripcion: `OT creada${citaId ? ' desde cita' : ' directamente'}. Vehículo: ${orden.marca.nombre} ${orden.modelo.nombre} ${orden.anio} — ${orden.placa}`,
+            realizadoPorId: userId,
+          },
+        })
+
+        return orden
+      })
+    } catch (err) {
+      const esChoqueDeNumero =
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2002' &&
+        (err.meta?.['target'] as string[] | undefined)?.includes('numero')
+      if (!esChoqueDeNumero || intento === MAX_INTENTOS) throw err
     }
-
-    await tx.eventoOT.create({
-      data: {
-        ordenId: orden.id,
-        tipo: TipoEventoOT.CREACION_OT,
-        descripcion: `OT creada${citaId ? ' desde cita' : ' directamente'}. Vehículo: ${orden.marca.nombre} ${orden.modelo.nombre} ${orden.anio} — ${orden.placa}`,
-        realizadoPorId: userId,
-      },
-    })
-
-    return orden
-  })
+  }
+  // Inalcanzable: el for siempre retorna o lanza en su última iteración.
+  throw new Error('No se pudo generar un número de OT único, intenta de nuevo')
 }
 
 // ── Listar ────────────────────────────────────────────────────────────────────
