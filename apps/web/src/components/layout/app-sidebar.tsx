@@ -20,6 +20,7 @@ import {
   Star,
   Smile,
   BookOpen,
+  Car,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -60,6 +61,12 @@ const navItems: NavItem[] = [
     href: '/equipo',
     label: 'Equipo de Trabajo',
     icon: Users,
+    roles: [RolUsuario.ADMIN],
+  },
+  {
+    href: '/vehiculos',
+    label: 'Catálogo de Vehículos',
+    icon: Car,
     roles: [RolUsuario.ADMIN],
   },
   {
