@@ -18,7 +18,7 @@ const schema = z.object({
   marcaId: z.string().min(1, 'Selecciona la marca'),
   modeloId: z.string().min(1, 'Selecciona el modelo'),
   anio: z.coerce.number().min(2000).max(ANIO_MAX),
-  placa: z.string().min(2, 'Placa inválida'),
+  placa: z.string().trim().min(2, 'Placa inválida').regex(/^\S+$/, 'La placa no puede contener espacios'),
   hora: z.string().regex(/^\d{2}:\d{2}$/, 'Selecciona una hora'),
   comentarios: z.string().optional(),
 })
