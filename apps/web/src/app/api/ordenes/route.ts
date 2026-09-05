@@ -10,7 +10,7 @@ const CreateSchema = z.object({
   marcaId:    z.string().optional(),
   modeloId:   z.string().optional(),
   anio:       z.number().int().min(2000).max(2030).optional(),
-  placa:      z.string().min(2).optional(),
+  placa:      z.string().trim().min(2).regex(/^\S+$/, 'La placa no puede contener espacios').optional(),
   tecnicoId:  z.string().min(1),
   color:      z.string().min(1),
   combustible: z.enum(['GASOLINA', 'DIESEL', 'HIBRIDO', 'ELECTRICO', 'GAS']),

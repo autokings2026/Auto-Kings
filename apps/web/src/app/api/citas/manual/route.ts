@@ -10,7 +10,7 @@ const CreateCitaManualSchema = z.object({
   marcaId:     z.string(),
   modeloId:    z.string(),
   anio:        z.number().int().min(2000).max(new Date().getFullYear() + 2),
-  placa:       z.string().min(2),
+  placa:       z.string().trim().min(2).regex(/^\S+$/, 'La placa no puede contener espacios'),
   hora:        z.string().regex(/^\d{2}:\d{2}$/),
   comentarios: z.string().optional(),
 })
