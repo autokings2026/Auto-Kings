@@ -127,12 +127,14 @@ export async function aprobarEncuesta(id: string, userId: string, comentarioOver
   if (!enc.respondidoEn) badRequest('La encuesta aún no ha sido respondida por el cliente')
   if (enc.estadoRevision !== 'PENDIENTE') badRequest('Esta encuesta ya fue revisada')
 
-  // El cliente puede haber calificado con estrellas sin escribir comentario.
-  // En ese caso el staff puede redactar uno (ej. lo que dijo por telefono)
-  // para poder publicar igual la reseña; si no hay ninguno, no se puede
-  // publicar (la reseña pública siempre necesita un texto).
-  const comentarioFinal = enc.comentario?.trim() || comentarioOverride?.trim()
+  // El staff puede editar el comentario antes de publicarlo (ej. corregir un
+  // typo, quitar un dato personal) o redactar uno si el cliente solo calificó
+  // con estrellas sin escribir nada. comentarioOverride manda siempre que
+  // venga con contenido; si no se envía nada, se usa el del cliente tal cual.
+  const comentarioFinal = comentarioOverride?.trim() || enc.comentario?.trim()
   if (!comentarioFinal) badRequest('No se puede publicar una reseña sin comentario del cliente')
+
+  const fueEditado = !!comentarioOverride?.trim() && comentarioOverride.trim() !== enc.comentario?.trim()
 
   const promedio = Math.round(
     ((enc.calidad ?? 0) + (enc.tiempo ?? 0) + (enc.atencion ?? 0)) / 3,
@@ -165,9 +167,11 @@ export async function aprobarEncuesta(id: string, userId: string, comentarioOver
       data: {
         ordenId: enc.ordenId,
         tipo: TipoEventoOT.ENCUESTA_APROBADA,
-        descripcion: enc.comentario?.trim()
-          ? 'Comentario de la encuesta aprobado por el staff y publicado como reseña en el sitio web.'
-          : 'Encuesta aprobada y publicada como reseña con un comentario redactado por el staff (el cliente no dejó uno).',
+        descripcion: !enc.comentario?.trim()
+          ? 'Encuesta aprobada y publicada como reseña con un comentario redactado por el staff (el cliente no dejó uno).'
+          : fueEditado
+            ? 'Comentario de la encuesta editado por el staff antes de publicarse como reseña en el sitio web.'
+            : 'Comentario de la encuesta aprobado por el staff y publicado como reseña en el sitio web.',
         realizadoPorId: userId,
       },
     })
