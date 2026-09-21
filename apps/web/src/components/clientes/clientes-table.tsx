@@ -3,10 +3,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { Search, RefreshCw, ChevronLeft, ChevronRight, Loader2, CalendarClock, History } from 'lucide-react'
+import { Search, RefreshCw, ChevronLeft, ChevronRight, Loader2, CalendarClock, History, Phone, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card } from '@/components/ui/card'
 import { formatDate } from '@/lib/utils'
 
 interface ClienteResumen {
@@ -78,64 +77,47 @@ export function ClientesTable() {
         </Button>
       </div>
 
-      {/* Table */}
-      <Card className="bg-surface border-surface-2 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-secondary" />
-          </div>
-        ) : !data || data.data.length === 0 ? (
-          <div className="py-20 text-center text-muted-foreground text-sm">
-            {search ? 'No se encontraron clientes.' : 'Todavía no hay clientes registrados.'}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-surface-2 text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="px-4 py-3 text-left">Cliente</th>
-                  <th className="px-4 py-3 text-left hidden sm:table-cell">Contacto</th>
-                  <th className="px-4 py-3 text-left">Reservas por hacer</th>
-                  <th className="px-4 py-3 text-left hidden md:table-cell">Reservas hechas</th>
-                  <th className="px-4 py-3 text-left hidden lg:table-cell">Última reserva</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-2">
-                {data.data.map((c) => (
-                  <tr
-                    key={c.id}
-                    onClick={() => router.push(`/clientes/${c.id}`)}
-                    className="hover:bg-surface-2/50 transition-colors cursor-pointer"
-                  >
-                    <td className="px-4 py-3 font-medium text-white">{c.nombre}</td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs hidden sm:table-cell">
-                      <div>{c.telefono}</div>
-                      {c.email && <div>{c.email}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      {c.citasPorHacer > 0 ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 text-blue-400 px-2.5 py-0.5 text-xs font-medium">
-                          <CalendarClock className="h-3 w-3" /> {c.citasPorHacer}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs hidden md:table-cell">
-                      <span className="inline-flex items-center gap-1">
-                        <History className="h-3 w-3" /> {c.citasHechas}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap hidden lg:table-cell">
-                      {c.ultimaCita ? formatDate(c.ultimaCita) : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* Lista */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-secondary" />
+        </div>
+      ) : !data || data.data.length === 0 ? (
+        <div className="py-20 text-center text-muted-foreground text-sm">
+          {search ? 'No se encontraron clientes.' : 'Todavía no hay clientes registrados.'}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {data.data.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => router.push(`/clientes/${c.id}`)}
+              className="w-full flex items-center justify-between gap-3 rounded-xl border border-surface-2 bg-surface hover:border-secondary/40 hover:bg-surface-2/50 transition-colors px-4 py-3 text-left"
+            >
+              <div className="min-w-0">
+                <p className="font-medium text-white truncate">{c.nombre}</p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {c.telefono}</span>
+                  <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {c.email ?? '—'}</span>
+                </div>
+              </div>
+              <div className="shrink-0 flex flex-col items-end gap-1 text-xs">
+                {c.citasPorHacer > 0 ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/15 text-blue-400 px-2.5 py-0.5 font-medium whitespace-nowrap">
+                    <CalendarClock className="h-3 w-3" /> {c.citasPorHacer} por hacer
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">Sin reservas próximas</span>
+                )}
+                <span className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
+                  <History className="h-3 w-3" /> {c.citasHechas} hechas
+                  {c.ultimaCita && <> · {formatDate(c.ultimaCita)}</>}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
