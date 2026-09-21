@@ -267,6 +267,7 @@ function InventarioForm({
   const [precioVenta, setPrecioVenta] = useState(item?.precioVenta ?? '')
   const [precioCosto, setPrecioCosto] = useState(item?.precioCosto ?? '')
   const [stockMinimo, setStockMinimo] = useState(item?.stockMinimo ?? '0')
+  const [stockInicial, setStockInicial] = useState('0')
   const [unidad, setUnidad] = useState(item?.unidad ?? 'unidad')
   const [proveedor, setProveedor] = useState(item?.proveedor ?? '')
   const [saving, setSaving] = useState(false)
@@ -289,6 +290,7 @@ function InventarioForm({
           precioVenta: Number(precioVenta),
           precioCosto: precioCosto ? Number(precioCosto) : undefined,
           stockMinimo: Number(stockMinimo || 0),
+          ...(esEdicion ? {} : { stockInicial: Number(stockInicial || 0) }),
           unidad: unidad.trim() || 'unidad',
           proveedor: proveedor.trim() || undefined,
         }),
@@ -329,6 +331,12 @@ function InventarioForm({
           <label className="text-xs text-muted-foreground">Punto de reorden</label>
           <input value={stockMinimo} onChange={(e) => setStockMinimo(e.target.value)} type="number" min="0" className={inputCls} />
         </div>
+        {!esEdicion && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Stock físico inicial</label>
+            <input value={stockInicial} onChange={(e) => setStockInicial(e.target.value)} type="number" min="0" className={inputCls} />
+          </div>
+        )}
         <div className="space-y-1 col-span-2 sm:col-span-1">
           <label className="text-xs text-muted-foreground">Proveedor</label>
           <input value={proveedor ?? ''} onChange={(e) => setProveedor(e.target.value)} className={inputCls} />

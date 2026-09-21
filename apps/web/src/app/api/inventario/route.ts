@@ -11,6 +11,7 @@ const CreateSchema = z.object({
   precioVenta: z.number().min(0),
   precioCosto: z.number().min(0).optional(),
   stockMinimo: z.number().min(0).optional(),
+  stockInicial: z.number().min(0).optional(),
   unidad:      z.string().trim().optional(),
   proveedor:   z.string().optional(),
 })
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const inv = await createInventario(parsed.data)
+    const inv = await createInventario(parsed.data, user.id)
     return Response.json(inv, { status: 201 })
   } catch (err) {
     const e = err as Error & { status?: number }
