@@ -13,6 +13,7 @@ export interface CreateInventarioInput {
   precioVenta: number
   precioCosto?: number
   stockMinimo?: number
+  stockInicial?: number // si viene, genera el movimiento AJUSTE "Inventario inicial" en la misma transacción
   unidad?: string
   proveedor?: string
 }
@@ -78,24 +79,42 @@ export async function listInventario(query: QueryInventarioInput) {
   return items
 }
 
-export async function createInventario(dto: CreateInventarioInput) {
+export async function createInventario(dto: CreateInventarioInput, userId: string) {
   const codigo = dto.codigo.trim().toUpperCase()
   if (!codigo) badRequest('El código es requerido')
+  if (dto.stockInicial !== undefined && dto.stockInicial < 0) badRequest('El stock inicial no puede ser negativo')
 
   const existente = await prisma.inventario.findUnique({ where: { codigo } })
   if (existente) badRequest('Ya existe una parte con ese código')
 
-  return prisma.inventario.create({
-    data: {
-      codigo,
-      nombre: dto.nombre.trim(),
-      descripcion: dto.descripcion,
-      precioVenta: dto.precioVenta,
-      precioCosto: dto.precioCosto,
-      stockMinimo: dto.stockMinimo ?? 0,
-      unidad: dto.unidad?.trim() || 'unidad',
-      proveedor: dto.proveedor,
-    },
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.inventario.create({
+      data: {
+        codigo,
+        nombre: dto.nombre.trim(),
+        descripcion: dto.descripcion,
+        precioVenta: dto.precioVenta,
+        precioCosto: dto.precioCosto,
+        stockMinimo: dto.stockMinimo ?? 0,
+        unidad: dto.unidad?.trim() || 'unidad',
+        proveedor: dto.proveedor,
+      },
+    })
+
+    if (dto.stockInicial) {
+      await tx.movimientoInventario.create({
+        data: {
+          inventarioId: inv.id,
+          tipo: TipoMovimientoInventario.AJUSTE,
+          cantidad: dto.stockInicial,
+          usuarioId: userId,
+          nota: 'Inventario inicial',
+        },
+      })
+      return tx.inventario.findUniqueOrThrow({ where: { id: inv.id } })
+    }
+
+    return inv
   })
 }
 
