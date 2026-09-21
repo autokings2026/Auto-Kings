@@ -17,6 +17,49 @@ function totalOrden(orden: {
   return base + adicionales
 }
 
+// Busca vehículos por placa o por nombre de cliente, para la pantalla
+// dedicada de historial (a diferencia del panel embebido en el detalle de la
+// OT, aquí se busca sin partir de una OT puntual). Agrupa por placa —
+// si una placa cambió de dueño o de marca/modelo registrado entre visitas,
+// se muestra el dato de la visita más reciente.
+export async function buscarVehiculos(q: string) {
+  const query = q.trim()
+  if (!query) return []
+
+  const ordenes = await prisma.ordenTrabajo.findMany({
+    where: {
+      OR: [
+        { placa: { contains: query, mode: 'insensitive' } },
+        { cliente: { nombre: { contains: query, mode: 'insensitive' } } },
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+    select: {
+      placa: true,
+      createdAt: true,
+      cliente: { select: { nombre: true } },
+      marca: { select: { nombre: true } },
+      modelo: { select: { nombre: true } },
+    },
+  })
+
+  const porPlaca = new Map<string, { placa: string; cliente: string; marca: string; modelo: string; ultimaVisita: Date }>()
+  for (const o of ordenes) {
+    if (!porPlaca.has(o.placa)) {
+      porPlaca.set(o.placa, {
+        placa: o.placa,
+        cliente: o.cliente.nombre,
+        marca: o.marca.nombre,
+        modelo: o.modelo.nombre,
+        ultimaVisita: o.createdAt,
+      })
+    }
+  }
+
+  return Array.from(porPlaca.values()).slice(0, 20)
+}
+
 export async function getHistorialVehiculo(placaRaw: string) {
   const placa = placaRaw.trim().toUpperCase()
   if (!placa) {

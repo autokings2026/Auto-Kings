@@ -22,6 +22,7 @@ import {
   BookOpen,
   Car,
   Package,
+  History,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/citas', label: 'Citas', icon: CalendarDays },
   { href: '/ordenes', label: 'Órdenes de Trabajo', icon: ClipboardList },
+  { href: '/historial-vehiculos', label: 'Historial de Vehículos', icon: History },
   {
     href: '/control-calidad',
     label: 'Control de Calidad',
