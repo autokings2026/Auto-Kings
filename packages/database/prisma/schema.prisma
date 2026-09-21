@@ -136,6 +136,12 @@ enum TipoPlantillaWA {
   PERSONALIZADO
 }
 
+enum TipoMovimientoInventario {
+  ENTRADA  // ingreso de stock (compra, devolución)
+  SALIDA   // consumo de stock (usado en una OT)
+  AJUSTE   // corrección manual (conteo físico, inventario inicial)
+}
+
 // ─────────────────────────────────────────
 // USUARIOS Y AUTENTICACIÓN
 // ─────────────────────────────────────────
@@ -166,6 +172,7 @@ model User {
   encuestasRevisadas      EncuestaSatisfaccion[]
   pushSubscriptions       PushSubscription[]
   cotizacionesAdicionalesCreadas CotizacionAdicional[] @relation("CotizacionAdicionalCreador")
+  movimientosInventario   MovimientoInventario[]
 
   @@map("users")
 }
@@ -293,10 +300,12 @@ model OrdenTrabajo {
   encuesta        EncuestaSatisfaccion?
   mensajes        MensajeWhatsApp[]
   eventos         EventoOT[]
+  movimientosInventario MovimientoInventario[]
 
   @@index([clienteId])
   @@index([tecnicoId])
   @@index([faseActual, estado])
+  @@index([placa])
   @@map("ordenes_trabajo")
 }
 
@@ -409,14 +418,17 @@ model ItemCotizacion {
   descripcion    String
   tipo           TipoItemCotizacion
   cantidad       Decimal            @db.Decimal(10, 2)
-  precioUnitario Decimal            @db.Decimal(12, 2)
+  precioUnitario Decimal            @db.Decimal(12, 2) // snapshot: congelado al cotizar, no cambia si luego cambia el precio del inventario
   subtotal       Decimal            @db.Decimal(12, 2) // cantidad * precioUnitario
   posicion       Int                @default(0)        // orden de las filas en la tabla
+  inventarioId   String?                                // si tipo=PARTE y viene del catálogo de inventario
 
   // Relaciones
   cotizacion DiagnosticoCotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  inventario Inventario?           @relation(fields: [inventarioId], references: [id], onDelete: SetNull)
 
   @@index([cotizacionId])
+  @@index([inventarioId])
   @@map("items_cotizacion")
 }
 
@@ -457,14 +469,17 @@ model ItemCotizacionAdicional {
   descripcion    String
   tipo           TipoItemCotizacion
   cantidad       Decimal            @db.Decimal(10, 2)
-  precioUnitario Decimal            @db.Decimal(12, 2)
+  precioUnitario Decimal            @db.Decimal(12, 2) // snapshot: congelado al cotizar
   subtotal       Decimal            @db.Decimal(12, 2)
   posicion       Int                @default(0)
+  inventarioId   String?
 
   // Relaciones
   cotizacion CotizacionAdicional @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  inventario Inventario?         @relation(fields: [inventarioId], references: [id], onDelete: SetNull)
 
   @@index([cotizacionId])
+  @@index([inventarioId])
   @@map("items_cotizacion_adicional")
 }
 
@@ -744,4 +759,55 @@ model BlogPost {
 
   @@index([slug])
   @@map("blog_posts")
+}
+
+// ─────────────────────────────────────────
+// INVENTARIO — catálogo de partes + punto de reorden
+// ─────────────────────────────────────────
+
+model Inventario {
+  id          String   @id @default(cuid())
+  codigo      String   @unique // SKU
+  nombre      String
+  descripcion String?  @db.Text
+  precioVenta Decimal  @db.Decimal(12, 2)
+  precioCosto Decimal? @db.Decimal(12, 2)
+  // stockActual SOLO se modifica vía trigger, a partir de movimientos_inventario.
+  // Nunca escribir este campo directamente desde la app.
+  stockActual Decimal  @default(0) @db.Decimal(10, 2)
+  stockMinimo Decimal  @default(0) @db.Decimal(10, 2) // punto de reorden
+  unidad      String   @default("unidad")
+  proveedor   String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  movimientos              MovimientoInventario[]
+  itemsCotizacion          ItemCotizacion[]
+  itemsCotizacionAdicional ItemCotizacionAdicional[]
+
+  @@index([activo])
+  @@map("inventario")
+}
+
+// Libro mayor de inventario — única vía de escritura para stockActual (vía trigger)
+model MovimientoInventario {
+  id                String                   @id @default(cuid())
+  inventarioId      String
+  tipo              TipoMovimientoInventario
+  cantidad          Decimal                  @db.Decimal(10, 2) // delta: positivo en ENTRADA/AJUSTE(+), positivo en SALIDA (se resta), puede ser negativo en AJUSTE
+  referenciaOrdenId String?                                      // OT que originó la salida (descuento por cotización)
+  usuarioId         String
+  nota              String?
+  createdAt         DateTime                 @default(now())
+
+  // Relaciones
+  inventario      Inventario    @relation(fields: [inventarioId], references: [id], onDelete: Restrict)
+  referenciaOrden OrdenTrabajo? @relation(fields: [referenciaOrdenId], references: [id], onDelete: SetNull)
+  usuario         User          @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([inventarioId])
+  @@index([referenciaOrdenId])
+  @@map("movimientos_inventario")
 }

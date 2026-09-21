@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Plus, Trash2, Loader2, CheckCircle, XCircle, MessageCircle, FileDown, Copy, Check } from 'lucide-react'
+import { Plus, Trash2, Loader2, CheckCircle, XCircle, MessageCircle, FileDown, Copy, Check, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
+import { InventarioPicker, type InventarioPickerResult } from './inventario-picker'
 
 
 interface ItemRow {
@@ -17,10 +18,12 @@ interface ItemRow {
   tipo: 'MATERIAL' | 'PARTE' | 'MANO_OBRA'
   cantidad: string
   precioUnitario: string
+  inventarioId: string | null
+  inventarioCodigo: string | null
 }
 
 function emptyItem(): ItemRow {
-  return { descripcion: '', tipo: 'MANO_OBRA', cantidad: '1', precioUnitario: '0' }
+  return { descripcion: '', tipo: 'MANO_OBRA', cantidad: '1', precioUnitario: '0', inventarioId: null, inventarioCodigo: null }
 }
 
 export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () => void }) {
@@ -36,6 +39,8 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
       tipo: i.tipo as 'MATERIAL' | 'PARTE' | 'MANO_OBRA',
       cantidad: String(i.cantidad),
       precioUnitario: String(i.precioUnitario),
+      inventarioId: i.inventario?.id ?? null,
+      inventarioCodigo: i.inventario?.codigo ?? null,
     })) ?? [emptyItem()],
   )
   const [aplicarISV, setAplicarISV] = useState(diag?.aplicarISV ?? false)
@@ -63,6 +68,18 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
   const updateItem = (i: number, field: keyof ItemRow, val: string) =>
     setItems(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
 
+  const selectInventario = (i: number, sel: InventarioPickerResult) =>
+    setItems(rows => rows.map((r, idx) => idx === i ? {
+      ...r,
+      descripcion: sel.nombre,
+      precioUnitario: sel.precioVenta,
+      inventarioId: sel.id,
+      inventarioCodigo: sel.codigo,
+    } : r))
+
+  const desvincularInventario = (i: number) =>
+    setItems(rows => rows.map((r, idx) => idx === i ? { ...r, inventarioId: null, inventarioCodigo: null } : r))
+
   const save = async () => {
     if (!sintoma || !diagnostico) { setError('Completa síntoma y diagnóstico'); return }
     setSaving(true); setError('')
@@ -83,6 +100,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
             cantidad: Number(item.cantidad),
             precioUnitario: Number(item.precioUnitario),
             posicion: i,
+            inventarioId: item.tipo === 'PARTE' ? item.inventarioId : null,
           })),
         }),
       })
@@ -204,6 +222,21 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                     </button>
                   )}
                 </div>
+                {/* Vínculo con inventario (solo para tipo=Parte) */}
+                {item.tipo === 'PARTE' && (
+                  item.inventarioId ? (
+                    <div className="flex items-center justify-between gap-2 rounded-lg border border-secondary/30 bg-secondary/10 px-2.5 py-1.5 text-xs text-secondary">
+                      <span>Desde inventario: {item.inventarioCodigo}</span>
+                      {!readonly && (
+                        <button type="button" onClick={() => desvincularInventario(i)} className="text-muted-foreground hover:text-red-400">
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ) : !readonly && (
+                    <InventarioPicker onSelect={(sel) => selectInventario(i, sel)} />
+                  )
+                )}
                 {/* Fila 2: descripción */}
                 <input
                   value={item.descripcion}
@@ -263,7 +296,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
               <tbody className="divide-y divide-surface-2">
                 {items.map((item, i) => (
                   <tr key={i}>
-                    <td className="px-3 py-1.5">
+                    <td className="px-3 py-1.5 space-y-1">
                       <Input
                         value={item.descripcion}
                         onChange={e => updateItem(i, 'descripcion', e.target.value)}
@@ -271,6 +304,20 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                         className="h-8 text-xs border-0 bg-transparent p-0 focus-visible:ring-0"
                         placeholder="Descripción…"
                       />
+                      {item.tipo === 'PARTE' && (
+                        item.inventarioId ? (
+                          <div className="flex items-center justify-between gap-2 rounded border border-secondary/30 bg-secondary/10 px-2 py-1 text-[10px] text-secondary">
+                            <span>Inventario: {item.inventarioCodigo}</span>
+                            {!readonly && (
+                              <button type="button" onClick={() => desvincularInventario(i)} className="text-muted-foreground hover:text-red-400">
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        ) : !readonly && (
+                          <InventarioPicker onSelect={(sel) => selectInventario(i, sel)} />
+                        )
+                      )}
                     </td>
                     <td className="px-3 py-1.5">
                       <select
@@ -281,6 +328,7 @@ export function FaseDiagnostico({ orden, onUpdate }: { orden: OrdenDetalle; onUp
                       >
                         <option value="MANO_OBRA">Mano de obra</option>
                         <option value="MATERIAL">Material</option>
+                        <option value="PARTE">Parte</option>
                       </select>
                     </td>
                     <td className="px-3 py-1.5">

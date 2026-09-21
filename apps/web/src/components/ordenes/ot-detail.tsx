@@ -13,6 +13,7 @@ import { FaseReparacion } from './fase-reparacion'
 import { FaseCC } from './fase-cc'
 import { FaseEntrega } from './fase-entrega'
 import { EventosTimeline } from './eventos-timeline'
+import { HistorialVehiculo } from './historial-vehiculo'
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ export interface OrdenDetalle {
       precioUnitario: string
       subtotal: string
       posicion: number
+      inventario: { id: string; codigo: string; nombre: string } | null
     }[]
   } | null
   cotizacionesAdicionales: {
@@ -91,6 +93,7 @@ export interface OrdenDetalle {
       precioUnitario: string
       subtotal: string
       posicion: number
+      inventario: { id: string; codigo: string; nombre: string } | null
     }[]
   }[]
   reparacion: {
@@ -275,8 +278,11 @@ export function OtDetail({ ordenId }: { ordenId: string }) {
           )}
         </div>
 
-        {/* Timeline */}
-        <EventosTimeline eventos={orden.eventos} />
+        {/* Timeline + historial del vehículo */}
+        <div className="space-y-4">
+          <EventosTimeline eventos={orden.eventos} />
+          <HistorialVehiculo placa={orden.placa} ordenActualId={orden.id} />
+        </div>
       </div>
     </div>
   )

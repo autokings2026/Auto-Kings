@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Loader2, CheckCircle, XCircle, Plus, Trash2, MessageCircle, Copy, Check, AlertTriangle } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, Plus, Trash2, MessageCircle, Copy, Check, AlertTriangle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,6 +10,7 @@ import { formatCurrency } from '@/lib/utils'
 import { FaseOT } from '@kings/shared'
 import type { OrdenDetalle } from './ot-detail'
 import { ReparacionFotoUpload, type FotoRep } from './reparacion-foto-upload'
+import { InventarioPicker, type InventarioPickerResult } from './inventario-picker'
 
 
 // ── Cotización adicional ────────────────────────────────────────────────────
@@ -19,10 +20,12 @@ interface ItemRow {
   tipo: 'MATERIAL' | 'PARTE' | 'MANO_OBRA'
   cantidad: string
   precioUnitario: string
+  inventarioId: string | null
+  inventarioCodigo: string | null
 }
 
 function emptyItem(): ItemRow {
-  return { descripcion: '', tipo: 'MANO_OBRA', cantidad: '1', precioUnitario: '0' }
+  return { descripcion: '', tipo: 'MANO_OBRA', cantidad: '1', precioUnitario: '0', inventarioId: null, inventarioCodigo: null }
 }
 
 function CotizacionAdicionalForm({ ordenId, onCreated }: { ordenId: string; onCreated: () => void }) {
@@ -34,6 +37,18 @@ function CotizacionAdicionalForm({ ordenId, onCreated }: { ordenId: string; onCr
 
   const updateItem = (i: number, field: keyof ItemRow, val: string) =>
     setItems(rows => rows.map((r, idx) => idx === i ? { ...r, [field]: val } : r))
+
+  const selectInventario = (i: number, sel: InventarioPickerResult) =>
+    setItems(rows => rows.map((r, idx) => idx === i ? {
+      ...r,
+      descripcion: sel.nombre,
+      precioUnitario: sel.precioVenta,
+      inventarioId: sel.id,
+      inventarioCodigo: sel.codigo,
+    } : r))
+
+  const desvincularInventario = (i: number) =>
+    setItems(rows => rows.map((r, idx) => idx === i ? { ...r, inventarioId: null, inventarioCodigo: null } : r))
 
   const total = items.reduce((sum, item) => sum + Number(item.cantidad) * Number(item.precioUnitario), 0)
 
@@ -53,6 +68,7 @@ function CotizacionAdicionalForm({ ordenId, onCreated }: { ordenId: string; onCr
             cantidad: Number(item.cantidad),
             precioUnitario: Number(item.precioUnitario),
             posicion: i,
+            inventarioId: item.tipo === 'PARTE' ? item.inventarioId : null,
           })),
         }),
       })
@@ -114,6 +130,18 @@ function CotizacionAdicionalForm({ ordenId, onCreated }: { ordenId: string; onCr
                 </button>
               )}
             </div>
+            {item.tipo === 'PARTE' && (
+              item.inventarioId ? (
+                <div className="flex items-center justify-between gap-2 rounded-lg border border-secondary/30 bg-secondary/10 px-2.5 py-1.5 text-xs text-secondary">
+                  <span>Desde inventario: {item.inventarioCodigo}</span>
+                  <button type="button" onClick={() => desvincularInventario(i)} className="text-muted-foreground hover:text-red-400">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <InventarioPicker onSelect={(sel) => selectInventario(i, sel)} />
+              )
+            )}
             <input
               value={item.descripcion}
               onChange={e => updateItem(i, 'descripcion', e.target.value)}
