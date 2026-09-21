@@ -21,6 +21,7 @@ import {
   Smile,
   BookOpen,
   Car,
+  Package,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -67,6 +68,12 @@ const navItems: NavItem[] = [
     href: '/vehiculos',
     label: 'Catálogo de Vehículos',
     icon: Car,
+    roles: [RolUsuario.ADMIN],
+  },
+  {
+    href: '/inventario',
+    label: 'Inventario',
+    icon: Package,
     roles: [RolUsuario.ADMIN],
   },
   {

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { deleteImage } from '@/lib/cloudinary'
+import { descontarInventarioOT } from '@/lib/services/inventario'
 import {
   EstadoCita,
   EstadoOT,
@@ -41,6 +42,7 @@ export interface ItemInput {
   cantidad: number
   precioUnitario: number
   posicion?: number
+  inventarioId?: string | null // si tipo=PARTE y viene del catálogo de inventario (precio queda congelado)
 }
 
 export interface SaveDiagnosticoInput {
@@ -303,10 +305,23 @@ export async function findOneOrden(id: string) {
       },
       fotosReparacion: { orderBy: { createdAt: 'asc' } },
       checklistRecepcion: true,
-      diagnostico: { include: { items: { orderBy: { posicion: 'asc' } } } },
+      diagnostico: {
+        include: {
+          items: {
+            orderBy: { posicion: 'asc' },
+            include: { inventario: { select: { id: true, codigo: true, nombre: true } } },
+          },
+        },
+      },
       cotizacionesAdicionales: {
         orderBy: { createdAt: 'asc' },
-        include: { items: { orderBy: { posicion: 'asc' } }, creador: { select: { id: true, nombre: true } } },
+        include: {
+          items: {
+            orderBy: { posicion: 'asc' },
+            include: { inventario: { select: { id: true, codigo: true, nombre: true } } },
+          },
+          creador: { select: { id: true, nombre: true } },
+        },
       },
       reparacion: { include: { tecnico: { select: { id: true, nombre: true } } } },
       controlesCC: {
@@ -612,6 +627,7 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
         precioUnitario: item.precioUnitario,
         subtotal: Number(item.cantidad) * Number(item.precioUnitario),
         posicion: item.posicion ?? i,
+        inventarioId: item.tipo === 'PARTE' ? item.inventarioId ?? null : null,
       })),
     })
 
@@ -637,7 +653,12 @@ export async function saveDiagnostico(id: string, dto: SaveDiagnosticoInput, use
 
     return tx.diagnosticoCotizacion.findUnique({
       where: { id: diag.id },
-      include: { items: { orderBy: { posicion: 'asc' } } },
+      include: {
+        items: {
+          orderBy: { posicion: 'asc' },
+          include: { inventario: { select: { id: true, codigo: true, nombre: true } } },
+        },
+      },
     })
   })
 }
@@ -754,7 +775,9 @@ export async function registrarCC(id: string, dto: CreateCCInput, userId: string
   if (!orden) notFound('OT no encontrada')
   if (orden!.faseActual !== FaseOT.CONTROL_CALIDAD) badRequest('La OT no está en fase de Control de Calidad')
 
-  return prisma.$transaction(async (tx) => {
+  let advertenciasInventario: Awaited<ReturnType<typeof descontarInventarioOT>> = []
+
+  const cc = await prisma.$transaction(async (tx) => {
     const cc = await tx.controlCalidad.create({
       data: { ordenId: id, aprobado: dto.aprobado, observaciones: dto.observaciones, revisadoPorId: userId },
     })
@@ -766,12 +789,20 @@ export async function registrarCC(id: string, dto: CreateCCInput, userId: string
         create: { ordenId: id, registradoPorId: userId },
         update: {},
       })
+      // Confirmación de la OT: se descuenta stock de las partes usadas
+      // (cotización original + adicionales aprobadas), de forma atómica e
+      // idempotente. No bloquea si falta stock, solo advierte — la advertencia
+      // queda registrada en el evento para que no se pierda al navegar.
+      advertenciasInventario = await descontarInventarioOT(id, userId, tx)
       await tx.eventoOT.create({
         data: {
           ordenId: id,
           tipo: TipoEventoOT.CC_APROBADO,
-          descripcion: 'Control de calidad aprobado. Vehículo listo para entrega.',
+          descripcion: advertenciasInventario.length > 0
+            ? `Control de calidad aprobado. Vehículo listo para entrega. ⚠️ Stock insuficiente: ${advertenciasInventario.map(a => `${a.nombre} (faltan ${a.faltante})`).join(', ')}`
+            : 'Control de calidad aprobado. Vehículo listo para entrega.',
           realizadoPorId: userId,
+          metadata: advertenciasInventario.length > 0 ? { advertenciasInventario } : undefined,
         },
       })
     } else {
@@ -789,6 +820,8 @@ export async function registrarCC(id: string, dto: CreateCCInput, userId: string
 
     return cc
   })
+
+  return { ...cc, advertenciasInventario }
 }
 
 // ── Entrega ───────────────────────────────────────────────────────────────────
@@ -935,10 +968,16 @@ export async function crearCotizacionAdicional(id: string, dto: CrearCotizacionA
             precioUnitario: item.precioUnitario,
             subtotal: Number(item.cantidad) * Number(item.precioUnitario),
             posicion: item.posicion ?? i,
+            inventarioId: item.tipo === 'PARTE' ? item.inventarioId ?? null : null,
           })),
         },
       },
-      include: { items: { orderBy: { posicion: 'asc' } } },
+      include: {
+        items: {
+          orderBy: { posicion: 'asc' },
+          include: { inventario: { select: { id: true, codigo: true, nombre: true } } },
+        },
+      },
     })
 
     await tx.eventoOT.create({

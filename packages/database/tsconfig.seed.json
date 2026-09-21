@@ -6,5 +6,5 @@
     "resolveJsonModule": true,
     "strict": false
   },
-  "include": ["prisma/seed.ts", "prisma/seed-vehicles.ts"]
+  "include": ["prisma/seed.ts", "prisma/seed-vehicles.ts", "prisma/seed-inventario.ts"]
 }

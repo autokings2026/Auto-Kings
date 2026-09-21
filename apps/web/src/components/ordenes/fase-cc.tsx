@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Loader2, CheckCircle, XCircle, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,13 +21,14 @@ export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () 
   const [observaciones, setObservaciones] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [advertenciasInventario, setAdvertenciasInventario] = useState<{ nombre: string; faltante: number }[]>([])
 
   const submit = async () => {
     if (aprobado === null) { setError('Selecciona si apruebas o rechazas'); return }
     if (!aprobado && !observaciones.trim()) { setError('Las observaciones son requeridas al rechazar'); return }
     setSaving(true); setError('')
     try {
-      await fetch(`/api/ordenes/${orden.id}/cc`, {
+      const res = await fetch(`/api/ordenes/${orden.id}/cc`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,6 +36,10 @@ export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () 
         },
         body: JSON.stringify({ aprobado, observaciones: observaciones || undefined }),
       })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.advertenciasInventario?.length > 0) setAdvertenciasInventario(data.advertenciasInventario)
+      }
       onUpdate()
     } finally { setSaving(false) }
   }
@@ -45,6 +50,16 @@ export function FaseCC({ orden, onUpdate }: { orden: OrdenDetalle; onUpdate: () 
         <h2 className="text-sm font-semibold uppercase tracking-wider text-accent">
           Fase 4 · Control de Calidad
         </h2>
+
+        {advertenciasInventario.length > 0 && (
+          <div className="flex items-start gap-2 text-xs text-amber-400 bg-amber-500/10 rounded-lg px-3 py-2">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <span>
+              Stock insuficiente al descontar: {advertenciasInventario.map(a => `${a.nombre} (faltan ${a.faltante})`).join(', ')}.
+              Queda registrado en la línea de tiempo de la OT.
+            </span>
+          </div>
+        )}
 
         {/* Fotos de reparación para revisión */}
         <div className="space-y-1.5">

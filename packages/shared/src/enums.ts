@@ -92,6 +92,12 @@ export enum TipoPlantillaWA {
   PERSONALIZADO = 'PERSONALIZADO',
 }
 
+export enum TipoMovimientoInventario {
+  ENTRADA = 'ENTRADA',
+  SALIDA = 'SALIDA',
+  AJUSTE = 'AJUSTE',
+}
+
 // Orden de fases para la barra de progreso y validación de avance
 export const ORDEN_FASES: FaseOT[] = [
   FaseOT.LLEGADA_FOTOS,

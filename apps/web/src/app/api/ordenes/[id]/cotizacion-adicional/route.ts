@@ -9,6 +9,7 @@ const ItemSchema = z.object({
   cantidad:       z.number().min(0),
   precioUnitario: z.number().min(0),
   posicion:       z.number().int().optional(),
+  inventarioId:   z.string().nullable().optional(),
 })
 
 const Schema = z.object({
