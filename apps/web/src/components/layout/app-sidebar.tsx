@@ -23,6 +23,7 @@ import {
   Car,
   Package,
   History,
+  Contact,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RolUsuario, LABEL_ROL } from '@kings/shared'
@@ -39,6 +40,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/citas', label: 'Citas', icon: CalendarDays },
+  { href: '/clientes', label: 'Clientes', icon: Contact },
   { href: '/ordenes', label: 'Órdenes de Trabajo', icon: ClipboardList },
   { href: '/historial-vehiculos', label: 'Historial de Vehículos', icon: History },
   {
