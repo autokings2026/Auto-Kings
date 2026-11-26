@@ -111,7 +111,7 @@ export function ClientesTable() {
                 )}
                 <span className="flex items-center gap-1 text-muted-foreground whitespace-nowrap">
                   <History className="h-3 w-3" /> {c.citasHechas} hechas
-                  {c.ultimaCita && <> · {formatDate(c.ultimaCita)}</>}
+                  {c.ultimaCita && <> · {formatDate(`${c.ultimaCita}T12:00:00`)}</>}
                 </span>
               </div>
             </button>

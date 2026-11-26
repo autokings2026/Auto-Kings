@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { deleteImage } from '@/lib/cloudinary'
 import { descontarInventarioOT } from '@/lib/services/inventario'
+import { hoyHonduras, rangoSemana } from '@/lib/fechas'
 import {
   EstadoCita,
   EstadoOT,
@@ -1063,10 +1064,8 @@ export async function getDashboardStats(opts?: { userId?: string; rol?: string }
   const manana = new Date(hoy)
   manana.setDate(hoy.getDate() + 1)
 
-  // Semana calendario (lunes → domingo)
-  const diasDesdeLunes = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
-  const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - diasDesdeLunes)
-  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 7)
+  // Semana calendario (lunes → domingo) para las citas, según la fecha de Honduras
+  const semana = rangoSemana(hoyHonduras())
 
   // Inicio del mes actual
   const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
@@ -1075,7 +1074,7 @@ export async function getDashboardStats(opts?: { userId?: string; rol?: string }
     prisma.ordenTrabajo.count({ where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.EN_ESPERA_APROBACION } }),
     prisma.ordenTrabajo.count({ where: { estado: EstadoOT.COMPLETADA, updatedAt: { gte: hoy, lt: manana } } }),
-    prisma.cita.count({ where: { fecha: { gte: lunes, lt: domingo }, estado: { notIn: [EstadoCita.CANCELADA, EstadoCita.CONVERTIDA] } } }),
+    prisma.cita.count({ where: { fecha: { gte: semana.inicio, lt: semana.fin }, estado: { notIn: [EstadoCita.CANCELADA, EstadoCita.CONVERTIDA] } } }),
     prisma.ordenTrabajo.groupBy({
       by: ['faseActual'],
       where: { estado: { in: [EstadoOT.ACTIVA, EstadoOT.EN_ESPERA_APROBACION] } },

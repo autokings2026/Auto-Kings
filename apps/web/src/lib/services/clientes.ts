@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { EstadoCita } from '@kings/shared'
+import { hoyHonduras } from '@/lib/fechas'
 
 // Cada reserva crea un cliente nuevo e independiente.
 // No se reutilizan registros por teléfono para evitar pisar datos de otras reservas.
@@ -33,12 +34,6 @@ export async function findOrCreateCliente(dto: {
 // cancelada, convertida a OT, no asistió) cuenta como "hecha".
 const ESTADOS_POR_HACER: EstadoCita[] = [EstadoCita.PENDIENTE, EstadoCita.CONFIRMADA]
 
-function inicioDeHoy() {
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
-  return hoy
-}
-
 function esPorHacer(cita: { fecha: Date; estado: EstadoCita }, hoy: Date) {
   return cita.fecha >= hoy && ESTADOS_POR_HACER.includes(cita.estado as EstadoCita)
 }
@@ -55,7 +50,7 @@ interface CitaConCliente {
 
 export async function findAllClientes(query: { search?: string; page?: number; pageSize?: number }) {
   const { search, page = 1, pageSize = 15 } = query
-  const hoy = inicioDeHoy()
+  const hoy = hoyHonduras()
 
   const citas = await prisma.cita.findMany({
     where: search
@@ -97,7 +92,7 @@ export async function findAllClientes(query: { search?: string; page?: number; p
         email: info.email,
         citasPorHacer,
         citasHechas: info.citas.length - citasPorHacer,
-        ultimaCita: ultimaCita ? ultimaCita.toISOString() : null,
+        ultimaCita: ultimaCita ? ultimaCita.toISOString().split('T')[0] : null,
       }
     })
     .sort((a, b) => a.nombre.localeCompare(b.nombre))
@@ -129,7 +124,7 @@ export async function getClienteDetalle(telefonoParam: string) {
     throw err
   }
 
-  const hoy = inicioDeHoy()
+  const hoy = hoyHonduras()
   const masReciente = delCliente[0]!.cliente // ya viene ordenado desc por fecha
 
   const citasMapeadas = delCliente.map((ci) => ({
