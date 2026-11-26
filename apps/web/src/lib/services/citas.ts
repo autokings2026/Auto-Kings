@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { sendConfirmacionCita, sendRecordatorioCita } from '@/lib/email'
 import { findOrCreateCliente } from '@/lib/services/clientes'
 import { notificarATodoElEquipo } from '@/lib/services/push'
+import { hoyHonduras, rangoMes, rangoSemana, sumarDias } from '@/lib/fechas'
 import { EstadoCita } from '@kings/shared'
 import type { HorarioDia } from '@kings/shared'
 
@@ -22,7 +23,7 @@ export async function getSlotsDisponibles(fecha: string) {
   )
 
   const citasDelDia = await prisma.cita.findMany({
-    where: { fecha: new Date(`${fecha}T00:00:00`), estado: { notIn: [EstadoCita.CANCELADA] } },
+    where: { fecha: new Date(`${fecha}T00:00:00Z`), estado: { notIn: [EstadoCita.CANCELADA] } },
     select: { hora: true },
   })
 
@@ -77,7 +78,7 @@ export async function createCita(dto: {
       modeloId: dto.modeloId,
       anio: dto.anio,
       placa: dto.placa.trim().toUpperCase(),
-      fecha: new Date(`${dto.fecha}T00:00:00`),
+      fecha: new Date(`${dto.fecha}T00:00:00Z`),
       hora: dto.hora,
       comentarios: dto.comentarios,
     },
@@ -146,9 +147,6 @@ export async function createCitaManual(dto: {
 
   const cliente = await findOrCreateCliente({ nombre: dto.nombre, telefono: dto.telefono, email: dto.email })
 
-  const hoy = new Date()
-  const fechaHoy = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())
-
   // Walk-in: el cliente ya está en el taller, no se valida contra los slots
   // de agenda en línea y la cita queda confirmada de inmediato.
   const cita = await prisma.cita.create({
@@ -158,7 +156,7 @@ export async function createCitaManual(dto: {
       modeloId: dto.modeloId,
       anio: dto.anio,
       placa: dto.placa.trim().toUpperCase(),
-      fecha: fechaHoy,
+      fecha: hoyHonduras(),
       hora: dto.hora,
       comentarios: dto.comentarios,
       estado: EstadoCita.CONFIRMADA,
@@ -200,21 +198,15 @@ export async function findAllCitas(query: {
   const where: Record<string, unknown> = {}
 
   if (rango !== 'todas') {
-    const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+    const hoy = hoyHonduras()
     if (rango === 'hoy') {
-      const manana = new Date(hoy); manana.setDate(hoy.getDate() + 1)
-      where['fecha'] = { gte: hoy, lt: manana }
+      where['fecha'] = { gte: hoy, lt: sumarDias(hoy, 1) }
     } else if (rango === 'semana') {
-      // Lunes de la semana actual
-      const diasDesdelunes = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1
-      const lunes = new Date(hoy); lunes.setDate(hoy.getDate() - diasDesdelunes)
-      const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 7)
-      where['fecha'] = { gte: lunes, lt: domingo }
+      const { inicio, fin } = rangoSemana(hoy)
+      where['fecha'] = { gte: inicio, lt: fin }
     } else if (rango === 'mes') {
-      // Mes calendario completo
-      const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1)
-      const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1)
-      where['fecha'] = { gte: inicioMes, lt: finMes }
+      const { inicio, fin } = rangoMes(hoy)
+      where['fecha'] = { gte: inicio, lt: fin }
     }
   }
 
@@ -266,8 +258,8 @@ export async function findAllCitas(query: {
 // ── Recordatorios ─────────────────────────────────────────────────────────────
 
 export async function enviarRecordatorios() {
-  const manana = new Date(); manana.setDate(manana.getDate() + 1); manana.setHours(0, 0, 0, 0)
-  const pasadoManana = new Date(manana); pasadoManana.setDate(manana.getDate() + 1)
+  const manana = sumarDias(hoyHonduras(), 1)
+  const pasadoManana = sumarDias(manana, 1)
 
   const citas = await prisma.cita.findMany({
     where: {
@@ -304,7 +296,8 @@ export async function enviarRecordatorios() {
 function formatFecha(fecha: Date): string {
   return new Intl.DateTimeFormat('es-HN', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-    timeZone: 'America/Tegucigalpa',
+    // La fecha de la cita no tiene hora (medianoche UTC): ver lib/fechas.ts
+    timeZone: 'UTC',
   }).format(fecha)
 }
 
